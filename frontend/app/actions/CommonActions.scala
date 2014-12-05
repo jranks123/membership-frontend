@@ -30,14 +30,13 @@ trait CommonActions {
 
   val PermanentStaffNonMemberAction =
     GoogleAuthenticatedStaffAction andThen
-    isInAuthorisedGroupGoogleAuthReq(permanentStaffGroups, views.html.fragments.oauth.staffUnauthorisedError())
-
+    isInAuthorisedGroupGoogle[googleauth.UserIdentity, GoogleAuthRequest](permanentStaffGroups, views.html.fragments.oauth.staffUnauthorisedError())
 
   val AuthenticatedStaffNonMemberAction =
     AuthenticatedAction andThen
     onlyNonMemberFilter() andThen
     googleAuthenticationRefiner() andThen
-    isInAuthorisedGroupIdentityGoogleAuthReq(permanentStaffGroups, views.html.fragments.oauth.staffUnauthorisedError())
+    isInAuthorisedGroupGoogle[IdAndGoogle, IdAndGoogleAuthRequest](permanentStaffGroups, views.html.fragments.oauth.staffUnauthorisedError())
 
   val MemberAction = AuthenticatedAction andThen memberRefiner()
 

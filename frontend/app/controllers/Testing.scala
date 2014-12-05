@@ -1,5 +1,7 @@
 package controllers
 
+import actions.GoogleAuthRequest
+import com.gu.googleauth.UserIdentity
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import play.api.mvc.{Controller, Cookie}
 import play.twirl.api.Html
@@ -10,7 +12,7 @@ object Testing extends Controller with LazyLogging {
 
   val analyticsOffCookie = Cookie("ANALYTICS_OFF_KEY", "true", httpOnly = false)
 
-  val AuthorisedTester = GoogleAuthenticatedStaffAction andThen isInAuthorisedGroupGoogleAuthReq(
+  val AuthorisedTester = GoogleAuthenticatedStaffAction andThen isInAuthorisedGroupGoogle[UserIdentity, GoogleAuthRequest](
     Set("membership.dev@guardian.co.uk", "touchpoint@guardian.co.uk"),
       views.html.fragments.oauth.testUsersWrongGroup())
 

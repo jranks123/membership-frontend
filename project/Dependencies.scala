@@ -15,10 +15,10 @@ object Dependencies {
   val contentAPI = "com.gu" %% "content-api-client" % "3.5"
   val playWS = PlayImport.ws
   val playFilters = PlayImport.filters
-
+  val shapeless = "com.chuusai" % "shapeless_2.10.3" % "2.0.0"
   //projects
 
   val frontendDependencies = Seq(identityCookie, playGoogleAuth, identityTestUsers, scalaUri, membershipCommon,
-    contentAPI, playWS, playFilters,sentryRavenLogback)
+    contentAPI, playWS, playFilters,sentryRavenLogback, shapeless)
 
 }

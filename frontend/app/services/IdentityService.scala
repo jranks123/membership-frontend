@@ -1,22 +1,21 @@
 package services
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-
-import play.api.Logger
-import play.api.Play.current
-import play.api.libs.json._
-import play.api.libs.ws.{WS, WSResponse}
-
+import actions.IdAndGoogle
 import com.gu.membership.util.Timing
 import com.gu.membership.zuora.Address
-
 import configuration.Config
 import controllers.IdentityRequest
 import forms.MemberForm._
-import model.{IdMinimalUser, IdUser}
 import model.UserDeserializer._
+import model.{IdMinimalUser, IdUser}
 import monitoring.IdentityApiMetrics
+import play.api.Logger
+import play.api.Play.current
+import play.api.libs.json._
+import play.api.libs.ws.WS
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class IdentityServiceError(s: String) extends Throwable {
   override def getMessage: String = s
@@ -61,9 +60,9 @@ case class IdentityService(identityApi: IdentityApi) {
     postFields(json, user, identityRequest)
   }
 
-  def updateEmail(user: IdMinimalUser, email: String, identityRequest: IdentityRequest) = {
-    val json = Json.obj("primaryEmailAddress" -> email)
-    postFields(json, user, identityRequest)
+  def updateIdentityEmailToMatchGoogle(user: IdAndGoogle, identityRequest: IdentityRequest) = {
+    val json = Json.obj("primaryEmailAddress" -> user.google.email)
+    postFields(json, user.idMinimal, identityRequest)
   }
 
   private def postFields(json: JsObject, user: IdMinimalUser, identityRequest: IdentityRequest) = {
