@@ -29,6 +29,18 @@ import scala.concurrent.Future
  */
 object Functions extends LazyLogging {
 
+//  val initialAccumlatingAuthenticator = new ActionBuilder[AuthenticatedRequest[_, HNil]] {
+//    override def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = block(new AuthenticatedRequest[A, HNil](HNil, request))
+//  }
+//
+
+  // def authenticated(onUnauthenticated: RequestHeader => Result = chooseSigninOrRegister(_)): ActionBuilder[AuthRequest] =
+
+
+  val initialAccumulatingAuthenticator = new AuthenticatedBuilder[HList](_ => Some(HNil))
+
+  //def authAccum[U, UList <: HList](authenticatedBuilder: AuthenticatedBuilder[U]): ActionFunction[]
+
   class AccumulatingAuthenticator[U, UList <: HList](authenticatedBuilder: AuthenticatedBuilder[U])
     extends ActionFunction[({ type R[A] = AuthenticatedRequest[A, UList] })#R, ({ type P[A] = AuthenticatedRequest[A, U :: UList] })#P] {
 
@@ -40,25 +52,13 @@ object Functions extends LazyLogging {
     }
   }
 
-
-//  def makeAuthBuilderHListBased[U, UList <: HList](authenticatedBuilder: AuthenticatedBuilder[U]): ActionFunction[AuthenticatedRequest[_, UList], AuthenticatedRequest[_, U :: UList]] =
-//    new ActionFunction[AuthenticatedRequest[_, UList], AuthenticatedRequest[_, U :: UList]] {
-//      final def invokeBlock[A](request: AuthenticatedRequest[A, UList], block: AuthenticatedRequest[A, U :: UList] => Future[Result]) = {
-//        val adaptingBlock: (AuthenticatedRequest[A, U]) => Future[Result] = {
-//          monoAuthReq => block(new AuthenticatedRequest[A, U :: UList](monoAuthReq.user :: request.user, request))
-//        }
-//        authenticatedBuilder.authenticate(request, adaptingBlock)
-//      }
-//    }
-
-
   val googleGroupChecker = new GoogleGroupChecker(Config.googleGroupCheckerAuthConfig)
 
   def resultModifier(f: Result => Result) = new ActionBuilder[Request] {
     def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = block(request).map(f)
   }
 
-  def authenticated(onUnauthenticated: RequestHeader => Result = chooseSigninOrRegister(_)): ActionBuilder[AuthRequest] =
+  def authenticated(onUnauthenticated: RequestHeader => Result = chooseSigninOrRegister(_)) =
     new AuthenticatedBuilder(AuthenticationService.authenticatedUserFor(_), onUnauthenticated)
 
 
@@ -78,19 +78,6 @@ object Functions extends LazyLogging {
   (includedGroups: Set[String],errorWhenNotInAcceptedGroups: Html)(implicit g: Selector[UList, googleauth.UserIdentity]) = new ActionFilter[R] {
     override def filter[A](request: R[A]) = {
       val email = request.user.select[googleauth.UserIdentity].email
-      for (usersGroups <- googleGroupChecker.retrieveGroupsFor(email)) yield {
-        if (includedGroups.intersect(usersGroups).nonEmpty) None else {
-          logger.info(s"Excluding $email from '${request.path}' - not in accepted groups: $includedGroups")
-          Some(unauthorisedStaff(errorWhenNotInAcceptedGroups)(request))
-        }
-      }
-    }
-  }
-
-  def isInAuthorisedGroupGoogle[U, R[_] <: AuthenticatedRequest[_,U]]
-  (includedGroups: Set[String],errorWhenNotInAcceptedGroups: Html)(implicit g: GoogleAuthed[U]) = new ActionFilter[R] {
-    override def filter[A](request: R[A]) = {
-      val email = g.googleUserIn(request.user).email
       for (usersGroups <- googleGroupChecker.retrieveGroupsFor(email)) yield {
         if (includedGroups.intersect(usersGroups).nonEmpty) None else {
           logger.info(s"Excluding $email from '${request.path}' - not in accepted groups: $includedGroups")
@@ -121,7 +108,7 @@ object Functions extends LazyLogging {
     }
   }
 
-  def matchingGuardianEmail(onNonGuEmail: RequestHeader => Result = joinStaffMembership(_).flashing("error" -> "Identity email must match Guardian email")) = new ActionFilter[IdentityGoogleAuthRequest] {
+  def matchingGuardianEmail[UList <: HList, R[_] <: AuthenticatedRequest[_,UList]](onNonGuEmail: RequestHeader => Result = joinStaffMembership(_).flashing("error" -> "Identity email must match Guardian email"))(implicit u: Selector[UList, IdMinimalUser], g: Selector[UList, googleauth.UserIdentity]) = new ActionFilter[IdentityGoogleAuthRequest] {
     override def filter[A](request: IdentityGoogleAuthRequest[A]) = {
       for {
         user <- IdentityService(IdentityApi).getFullUserDetails(request.identityUser, IdentityRequest(request))

@@ -13,20 +13,9 @@ package object actions {
 
   val logger = Logger(this.getClass())
 
-  case class IdAndGoogle(idMinimal: IdMinimalUser, google: googleauth.UserIdentity)
-
   type AuthRequest[A] = AuthenticatedRequest[A, IdMinimalUser]
 
   type GoogleAuthRequest[A] = AuthenticatedRequest[A, googleauth.UserIdentity]
-
-  type IdAndGoogleAuthRequest[A] = AuthenticatedRequest[A, IdAndGoogle]
-
-  trait GoogleAuthed[U] {
-    def googleUserIn(u: U): googleauth.UserIdentity
-  }
-
-  implicit val gConv  = new GoogleAuthed[googleauth.UserIdentity] { def googleUserIn(u: googleauth.UserIdentity) = u }
-  implicit val igConv = new GoogleAuthed[IdAndGoogle] { def googleUserIn(u: IdAndGoogle) = u.google }
 
   implicit class RichAuthRequest[A](req: AuthRequest[A]) {
     lazy val touchpointBackend = TouchpointBackend.forUser(req.user)

@@ -1,3 +1,7 @@
+import play.api.mvc.ActionBuilder
+import play.api.mvc.Security.AuthenticatedRequest
+import shapeless.HList
+
 package actions
 
 import actions.Fallbacks._
@@ -10,21 +14,24 @@ import play.api.mvc.{DiscardingCookie, ActionBuilder}
 import play.api.mvc.Results._
 
 trait CommonActions {
+
   val NoCacheAction = resultModifier(NoCache(_))
 
   val CachedAction = resultModifier(Cached(_))
+
+  val BlankAuth: ActionBuilder[({type λ[A] = AuthenticatedRequest[A, HList]})#λ] = NoCacheAction andThen initialAccumulatingAuthenticator
 
   val Cors = resultModifier(_.withHeaders(
     ACCESS_CONTROL_ALLOW_ORIGIN -> Config.corsAllowOrigin,
     ACCESS_CONTROL_ALLOW_CREDENTIALS -> "true"))
 
-  val AuthenticatedAction = NoCacheAction andThen authenticated()
+  val AuthenticatedAction = BlankAuth andThen(new AccumulatingAuthenticator(authenticated()))
 
   val AuthenticatedNonMemberAction = AuthenticatedAction andThen onlyNonMemberFilter()
 
   val GoogleAuthAction: ActionBuilder[GoogleAuthRequest] = OAuthActions.AuthAction
 
-  val GoogleAuthenticatedStaffAction = NoCacheAction andThen GoogleAuthAction
+  val GoogleAuthenticatedStaffAction = BlankAuth andThen GoogleAuthAction
 
   val permanentStaffGroups = Config.staffAuthorisedEmailGroups
 
