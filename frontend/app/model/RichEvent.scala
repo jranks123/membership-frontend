@@ -53,6 +53,8 @@ object RichEvent {
     val imageUrl: String
     val tags: Seq[String]
 
+    def imagerUrl = "\\d+.jpg".r.replaceFirstIn(imageUrl, "{width}.jpg")
+
     val metadata: Metadata
 
     val imageMetadata: Option[Grid.Metadata]
@@ -66,7 +68,6 @@ object RichEvent {
       asset.secureUrl.getOrElse(asset.file)
     }
 
-    val imagerUrl = "\\d+.jpg".r.replaceFirstIn(imageUrl, "{width}.jpg")
 
     private val widths = image.fold(List.empty[Int])(_.assets.map(_.dimensions.width))
 
