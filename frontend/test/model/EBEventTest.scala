@@ -55,11 +55,11 @@ class EBEventTest extends PlaySpecification {
       ebDraftEvent.isBookable mustEqual(false)
     }
     "should return media service url if present" in {
-      ebLiveEvent.mainImageUrl mustEqual Some("https://some-media-tool.co.uk/images/sdf8u8sdf898hnsdcvs89dc?crop=0_3_480_288")
+      ebLiveEvent.mainImageGridCropUrl mustEqual Some("https://some-media-tool.co.uk/images/sdf8u8sdf898hnsdcvs89dc?crop=0_3_480_288")
 
     }
     "should not return media service url is missing" in {
-      nonTicketedEvent.mainImageUrl must beNone
+      nonTicketedEvent.mainImageGridCropUrl must beNone
     }
   }
 

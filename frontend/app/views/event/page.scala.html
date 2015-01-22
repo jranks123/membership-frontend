@@ -83,7 +83,7 @@
     <div class="event-content" itemscope itemtype="http://schema.org/Event">
 
         @if(event.metadata.largeImg) {
-            <div class="event-content__image" itemprop="image" content="@event.socialImgUrl">
+            <div class="event-content__image" itemprop="image" content="@event.imageUrl">
                 @fragments.event.image(event)
             </div>
 
@@ -108,7 +108,7 @@
 
             <div class="event-content__sidebar">
                 @if(!event.metadata.largeImg) {
-                    <img class="responsive-img hidden-mobile" src="@event.imgUrl" />
+                    <img class="responsive-img hidden-mobile" src="@event.imageUrl" />
                 }
 
                 <div class="event-content__sticky js-sticky" data-sticky-sibling=".event-content__body">

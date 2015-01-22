@@ -124,7 +124,7 @@ object Eventbrite {
     val isFree = isSoldThruEventbrite && hasFreeGeneralReleaseTicket
     val possiblyMissingDiscount = !hasFreeGeneralReleaseTicket && !hasMemberTicket
 
-    val mainImageUrl: Option[String] = description.flatMap(desc => "<!--\\s*main-image: (.*?)\\s*-->".r.findFirstMatchIn(desc.html).map(_.group(1)) )
+    val mainImageGridCropUrl: Option[String] = description.flatMap(desc => "<!--\\s*main-image: (.*?)\\s*-->".r.findFirstMatchIn(desc.html).map(_.group(1)) )
 
     val slug = slugify(name.text) + "-" + id
 

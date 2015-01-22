@@ -13,9 +13,8 @@ import monitoring.EventbriteMetrics
 class EventbriteServiceTest extends PlaySpecification {
 
   case class TestRichEvent(event: EBEvent) extends RichEvent {
-    val imgUrl = ""
+    val imageUrl = ""
     val availableWidths = ""
-    val socialImgUrl = ""
     val imageMetadata = None
     val tags = Nil
 

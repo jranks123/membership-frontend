@@ -60,7 +60,7 @@ trait Event extends Controller {
       event.name.text,
       path,
       event.description.map(_.blurb),
-      Some(event.socialImgUrl)
+      Some(event.imageUrl)
     )
     Ok(views.html.event.page(event, pageInfo))
   }

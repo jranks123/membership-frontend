@@ -50,8 +50,7 @@ object RichEvent {
 
   trait RichEvent {
     val event: EBEvent
-    val imgUrl: String
-    val socialImgUrl: String
+    val imageUrl: String
     val tags: Seq[String]
 
     val metadata: Metadata
@@ -63,11 +62,11 @@ object RichEvent {
   }
 
   case class GuLiveEvent(event: EBEvent, image: Option[EventImage]) extends RichEvent {
-    val imgUrl = image.flatMap(_.assets.headOption).fold(fallbackImage) { asset =>
-      val file = asset.secureUrl.getOrElse(asset.file)
-      val regex = "\\d+.jpg".r
-      regex.replaceFirstIn(file, "{width}.jpg")
+    val imageUrl = image.filter(_.assets.nonEmpty).map(_.assets.maxBy(_.dimensions.width)).fold(fallbackImage) { asset =>
+      asset.secureUrl.getOrElse(asset.file)
     }
+
+    val imagerUrl = "\\d+.jpg".r.replaceFirstIn(imageUrl, "{width}.jpg")
 
     private val widths = image.fold(List.empty[Int])(_.assets.map(_.dimensions.width))
 
@@ -75,23 +74,17 @@ object RichEvent {
 
     val imageMetadata = image.map(_.metadata)
 
-    val socialImgUrl = image.flatMap(_.assets.find(_.dimensions.width == widths.max)).fold(fallbackImage){ asset =>
-      asset.secureUrl.getOrElse(asset.file)
-    }
-
     val tags = Nil
 
     val metadata = guLiveMetadata
   }
 
   case class MasterclassEvent(event: EBEvent, data: Option[MasterclassData]) extends RichEvent {
-    val imgUrl = data.flatMap(_.images.headOption).flatMap(_.file)
+    val imageUrl = data.flatMap(_.images.headOption).flatMap(_.file)
       .getOrElse(fallbackImage)
       .replace("http://static", "https://static-secure")
 
     val availableWidths = ""
-
-    val socialImgUrl = imgUrl
 
     val imageMetadata = None
     val tags = event.description.map(_.html).flatMap(MasterclassEvent.extractTags).getOrElse(Nil)

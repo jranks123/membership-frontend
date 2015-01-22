@@ -6,7 +6,7 @@
 
 <a href="@routes.Event.details(event.slug)" class="event-item" itemscope itemtype="http://schema.org/Event">
     <meta itemprop="url" content="@event.memUrl">
-    <div class="event-item__media" itemprop="image" content="@event.socialImgUrl">
+    <div class="event-item__media" itemprop="image" content="@event.imageUrl">
         @fragments.event.image(event)
     </div>
     <div class="event-item__content">
