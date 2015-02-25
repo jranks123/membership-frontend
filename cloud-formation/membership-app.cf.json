@@ -51,7 +51,7 @@
         "FrontendAutoScalingGroup" : {
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
-                "AvailabilityZones" : { "Fn::GetAZs" : "" },
+                "AvailabilityZones" : [ "eu-west-1a","eu-west-1b" ],
                 "VPCZoneIdentifier" : { "Ref" : "Subnets" },
                 "LaunchConfigurationName" : { "Ref" : "FrontendLaunchConfig" },
                 "MinSize" : "3",
