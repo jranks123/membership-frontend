@@ -86,7 +86,7 @@ trait WhatsOn extends Controller with ActivityTracking {
     Ok(views.html.whatson.overview(pageInfo, events, latestArticles))
   }
 
-  def calendarGrid = GoogleAuthenticatedStaffAction { implicit request =>
+  def calendarGrid(location: Option[String] = None) = GoogleAuthenticatedStaffAction { implicit request =>
 
     val pageInfo = PageInfo(
       CopyConfig.copyTitleEvents,
@@ -94,8 +94,10 @@ trait WhatsOn extends Controller with ActivityTracking {
       Some(CopyConfig.copyDescriptionEvents)
     )
 
-    val eventsGroupedByMonth = groupEventsByMonth(collectAllEvents)
-    Ok(views.html.whatson.calendarGrid(eventsGroupedByMonth, pageInfo))
+    val allEvents = collectAllEvents
+    val eventsGroupedByMonth = groupEventsByMonth(allEvents)
+    val cities = allEvents.flatMap(_.event.venue.address.flatMap(_.city)).distinct
+    Ok(views.html.whatson.calendarGrid(eventsGroupedByMonth, pageInfo, cities, location))
   }
 
   def calendarList = GoogleAuthenticatedStaffAction { implicit request =>
