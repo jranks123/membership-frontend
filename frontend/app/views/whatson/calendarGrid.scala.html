@@ -1,9 +1,9 @@
 @(
     groupedEvents: scala.collection.SortedMap[org.joda.time.LocalDate, Seq[model.RichEvent.RichEvent]],
     pageInfo: model.PageInfo,
-    cities: Seq[String],
+    cities: Seq[model.CityLink],
     location: Option[String]
-    )
+)
 
 @dateGroup(title: String, events: Seq[model.RichEvent.RichEvent], classes: Seq[String] = Nil) = {
     <section class="date-listing @classes.mkString(" ")">
@@ -27,9 +27,14 @@
 
         @fragments.page.pageHeader("Calendar", None)
 
-        @cities
-
-        @location
+        <form method="get">
+            <select name="location">
+            @for(c <- cities) {
+                <option value="@c.slug"@if(location==c.slug){ selected="selected"}>@c.name</option>
+            }
+            </select>
+            <input type="submit" value="Apply filter" />
+        </form>
 
         <div class="filter-bar">
             <a class="action action--no-icon" href="@routes.WhatsOn.calendarList" aria-title="View events as a list" title="View events as a list">

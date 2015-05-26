@@ -3,7 +3,7 @@ package controllers
 import com.github.nscala_time.time.Imports._
 import configuration.CopyConfig
 import model.RichEvent.RichEvent
-import model.{EventGroup, ContentItem, EventCollections, PageInfo}
+import model.{EventGroup, ContentItem, EventCollections, PageInfo, CityLink}
 import play.api.mvc.Controller
 import services._
 import tracking.ActivityTracking
@@ -86,6 +86,17 @@ trait WhatsOn extends Controller with ActivityTracking {
     Ok(views.html.whatson.overview(pageInfo, events, latestArticles))
   }
 
+  def toSlug(s: String) = {
+    s.toLowerCase.replaceAll("[^A-Za-z0-9 ]", "").replace(" ", "-")
+  }
+
+  def buildCityList(events: Seq[RichEvent]) = {
+    val cities = events.flatMap(_.event.venue.address.flatMap(_.city)).distinct
+    cities.map(c =>
+      CityLink(c, toSlug(c))
+    )
+  }
+
   def calendarGrid(location: Option[String] = None) = GoogleAuthenticatedStaffAction { implicit request =>
 
     val pageInfo = PageInfo(
@@ -94,9 +105,15 @@ trait WhatsOn extends Controller with ActivityTracking {
       Some(CopyConfig.copyDescriptionEvents)
     )
 
-    val allEvents = collectAllEvents
+    var allEvents = collectAllEvents
+    val cities = buildCityList(allEvents)
+
+    location.map { loc =>
+      allEvents = allEvents.filter(e => {
+        e.event.venue.address.flatMap(_.city).getOrElse("").equalsIgnoreCase(loc)
+      })
+    }
     val eventsGroupedByMonth = groupEventsByMonth(allEvents)
-    val cities = allEvents.flatMap(_.event.venue.address.flatMap(_.city)).distinct
     Ok(views.html.whatson.calendarGrid(eventsGroupedByMonth, pageInfo, cities, location))
   }
 

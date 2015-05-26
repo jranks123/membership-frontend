@@ -24,3 +24,5 @@ case class EventCollections(
     partnersOnly: Seq[RichEvent],
     programmingPartnerEvents: Option[EventGroup]
 )
+
+case class CityLink(name: String, slug: String)
