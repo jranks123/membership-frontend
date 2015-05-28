@@ -25,4 +25,4 @@ case class EventCollections(
     programmingPartnerEvents: Option[EventGroup]
 )
 
-case class CityLink(name: String, slug: String)
+case class CityLink(name: String, slug: String, count: Int)

@@ -91,13 +91,14 @@ trait WhatsOn extends Controller with ActivityTracking {
   }
 
   def buildCityList(events: Seq[RichEvent]) = {
-    val cities = events.flatMap(_.event.venue.address.flatMap(_.city)).distinct
-    cities.map(c =>
-      CityLink(c, toSlug(c))
-    )
+    val grouped = events.groupBy(_.event.venue.address.flatMap((_.city))).mapValues(_.size)
+    grouped.map((cityCount: (Option[String], Int)) => {
+      val cityName = cityCount._1.getOrElse("")
+      CityLink(cityName, toSlug(cityName), cityCount._2)
+    }).toSeq
   }
 
-  def calendarGrid(location: Option[String] = None) = GoogleAuthenticatedStaffAction { implicit request =>
+  def calendarGrid(location: Option[String] = None, period: Option[String] = None) = GoogleAuthenticatedStaffAction { implicit request =>
 
     val pageInfo = PageInfo(
       CopyConfig.copyTitleEvents,
@@ -108,10 +109,14 @@ trait WhatsOn extends Controller with ActivityTracking {
     var allEvents = collectAllEvents
     val cities = buildCityList(allEvents)
 
-    location.map { loc =>
-      allEvents = allEvents.filter(e => {
-        e.event.venue.address.flatMap(_.city).getOrElse("").equalsIgnoreCase(loc)
-      })
+    location match {
+      case None =>        // do nothing
+      case Some("all") => // do nothing
+      case Some(loc) => {
+        allEvents = allEvents.filter(e => {
+          toSlug(e.event.venue.address.flatMap(_.city).getOrElse("")).equals(loc)
+        })
+      }
     }
     val eventsGroupedByMonth = groupEventsByMonth(allEvents)
     Ok(views.html.whatson.calendarGrid(eventsGroupedByMonth, pageInfo, cities, location))

@@ -29,9 +29,15 @@
 
         <form method="get">
             <select name="location">
-            @for(c <- cities) {
-                <option value="@c.slug"@if(location==c.slug){ selected="selected"}>@c.name</option>
-            }
+                <option value="all">All locations</option>
+                @for(c <- cities) {
+                    <option value="@c.slug"@if(location.getOrElse("")==c.slug){ selected="selected"}>@c.name (@c.count)</option>
+                }
+            </select>
+            <select name="period">
+                <option value="7-days">Next 7 days</option>
+                <option value="14-days">Next 14 days</option>
+                <option value="30-days">Next 30 days</option>
             </select>
             <input type="submit" value="Apply filter" />
         </form>
