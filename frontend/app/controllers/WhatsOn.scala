@@ -3,7 +3,8 @@ package controllers
 import com.github.nscala_time.time.Imports._
 import configuration.CopyConfig
 import model.RichEvent.RichEvent
-import model.{EventGroup, ContentItem, EventCollections, PageInfo, CityLink}
+import model.{EventGroup, ContentItem, EventCollections, PageInfo, EventFilterLink, PeriodGroup}
+import org.joda.time.{Interval, Period, DateTime}
 import play.api.mvc.Controller
 import services._
 import tracking.ActivityTracking
@@ -90,15 +91,13 @@ trait WhatsOn extends Controller with ActivityTracking {
     s.toLowerCase.replaceAll("[^A-Za-z0-9 ]", "").replace(" ", "-")
   }
 
-  def buildCityList(events: Seq[RichEvent]) = {
-    val grouped = events.groupBy(_.event.venue.address.flatMap((_.city))).mapValues(_.size)
-    grouped.map((cityCount: (Option[String], Int)) => {
-      val cityName = cityCount._1.getOrElse("")
-      CityLink(cityName, toSlug(cityName), cityCount._2)
-    }).toSeq
+  def groupEventsByField(events: Seq[RichEvent], grouper: RichEvent => Option[String]) : Seq[EventFilterLink] = {
+    events.groupBy(grouper).collect {
+      case (Some(groupName), events) => EventFilterLink(groupName, toSlug(groupName), events.size)
+    }.toSeq
   }
 
-  def calendarGrid(location: Option[String] = None, period: Option[String] = None) = GoogleAuthenticatedStaffAction { implicit request =>
+  def calendarGrid(paramLocation: Option[String] = None, paramPeriod: Option[String] = None, paramProvider: Option[String] = None) = GoogleAuthenticatedStaffAction { implicit request =>
 
     val pageInfo = PageInfo(
       CopyConfig.copyTitleEvents,
@@ -107,9 +106,8 @@ trait WhatsOn extends Controller with ActivityTracking {
     )
 
     var allEvents = collectAllEvents
-    val cities = buildCityList(allEvents)
 
-    location match {
+    paramLocation match {
       case None =>        // do nothing
       case Some("all") => // do nothing
       case Some(loc) => {
@@ -118,8 +116,44 @@ trait WhatsOn extends Controller with ActivityTracking {
         })
       }
     }
+
+    paramProvider match {
+      case None =>        // do nothing
+      case Some("all") => // do nothing
+      case Some(p) => {
+        allEvents = allEvents.filter(e => {
+          toSlug(e.event.providerOpt.getOrElse("")).equals(p)
+        })
+      }
+    }
+
+    val listPeriods = List(
+      PeriodGroup("7-days", "Next 7 days", 1.week),
+      PeriodGroup("14-days", "Next 14 days", 2.week),
+      PeriodGroup("30-days", "Next 30 days", 1.month)
+    )
+
+    val periodOpt = listPeriods.find(_.slug == paramPeriod.getOrElse(""))
+    allEvents = periodOpt.map { p =>
+      val now = DateTime.now
+      val interval = new Interval(now, now + p.period)
+      allEvents.filter(event => interval.contains(event.start))
+    }.getOrElse(allEvents)
+
+    val listLocations = groupEventsByField(allEvents, _.venue.address.flatMap(_.city))
+    val listProviders = groupEventsByField(allEvents, _.providerOpt)
     val eventsGroupedByMonth = groupEventsByMonth(allEvents)
-    Ok(views.html.whatson.calendarGrid(eventsGroupedByMonth, pageInfo, cities, location))
+
+    Ok(views.html.whatson.calendarGrid(
+      eventsGroupedByMonth,
+      pageInfo,
+      listLocations,
+      paramLocation,
+      listPeriods,
+      paramPeriod,
+      listProviders,
+      paramProvider
+    ))
   }
 
   def calendarList = GoogleAuthenticatedStaffAction { implicit request =>

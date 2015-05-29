@@ -1,6 +1,7 @@
 package model
 
 import model.RichEvent.RichEvent
+import org.joda.time.Period
 
 // used for arbitrary groupings of events with custom titles
 case class EventGroup(sequenceTitle: String, events: Seq[RichEvent])
@@ -25,4 +26,6 @@ case class EventCollections(
     programmingPartnerEvents: Option[EventGroup]
 )
 
-case class CityLink(name: String, slug: String, count: Int)
+case class EventFilterLink(name: String, slug: String, count: Int)
+
+case class PeriodGroup(slug: String, name: String, period: Period)

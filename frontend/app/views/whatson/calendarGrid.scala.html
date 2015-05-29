@@ -1,8 +1,12 @@
 @(
     groupedEvents: scala.collection.SortedMap[org.joda.time.LocalDate, Seq[model.RichEvent.RichEvent]],
     pageInfo: model.PageInfo,
-    cities: Seq[model.CityLink],
-    location: Option[String]
+    listLocations: Seq[model.EventFilterLink],
+    paramLocation: Option[String],
+    listPeriods: List[model.PeriodGroup],
+    paramPeriod: Option[String],
+    listProviders: Seq[model.EventFilterLink],
+    paramProvider: Option[String]
 )
 
 @dateGroup(title: String, events: Seq[model.RichEvent.RichEvent], classes: Seq[String] = Nil) = {
@@ -27,19 +31,27 @@
 
         @fragments.page.pageHeader("Calendar", None)
 
-        <form method="get">
+        <form method="get" class="js-form-autosubmit">
             <select name="location">
                 <option value="all">All locations</option>
-                @for(c <- cities) {
-                    <option value="@c.slug"@if(location.getOrElse("")==c.slug){ selected="selected"}>@c.name (@c.count)</option>
+                @for(c <- listLocations) {
+                    <option value="@c.slug"@if(paramLocation.getOrElse("")==c.slug){ selected="selected"}>@c.name (@c.count)</option>
                 }
             </select>
             <select name="period">
-                <option value="7-days">Next 7 days</option>
-                <option value="14-days">Next 14 days</option>
-                <option value="30-days">Next 30 days</option>
+                <option value="all">All dates</option>
+                @for(p <- listPeriods) {
+                    <option value="@p.slug"@if(p.slug==paramPeriod.getOrElse("")){ selected="selected"}>@p.name</option>
+                }
+            </select>
+            <select name="provider">
+                <option value="all">All providers</option>
+                @for(c <- listProviders) {
+                    <option value="@c.slug"@if(paramProvider.getOrElse("")==c.slug){ selected="selected"}>@c.name.toLowerCase.capitalize (@c.count)</option>
+                }
             </select>
             <input type="submit" value="Apply filter" />
+            <a href="@routes.WhatsOn.calendarGrid(None, None, None)">clear filters</a>
         </form>
 
         <div class="filter-bar">

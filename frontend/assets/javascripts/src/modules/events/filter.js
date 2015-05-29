@@ -117,6 +117,19 @@ define(['$'], function ($) {
                 filterList();
             });
         }
+        autosubmit();
+    }
+
+    function autosubmit() {
+        var forms = $('.js-form-autosubmit');
+        forms.each(function(f) {
+            var elements = $('select', f);
+            elements.each(function(e) {
+                e.addEventListener('change', function(){
+                    f.submit();
+                });
+            });
+        });
     }
 
     return {
