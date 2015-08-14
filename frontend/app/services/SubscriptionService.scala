@@ -102,21 +102,24 @@ class SubscriptionService(val tierPlanRateIds: Map[ProductRatePlan, String],
                           val zuoraRestService: ZuoraRestService) extends AmendSubscription with LazyLogging {
   import SubscriptionService._
 
-  private def getAccount(memberId: MemberId): Future[Account] =
-    zuoraSoapService.query[Account](s"crmId='${memberId.salesforceAccountId}'").map(sortAccounts(_).last)
+  private def getAccount(memberId: MemberId): Future[Option[Account]] = {
+    zuoraSoapService.query[Account](s"crmId='${memberId.salesforceAccountId}'").map(sortAccounts(_).lastOption)
+  }
 
   //TODO before we do subs we need to filter by rate plans membership knows about
   def getSubscriptions(memberId: MemberId): Future[Seq[Subscription]] = {
     for {
-      account <- getAccount(memberId)
-      subscriptions <- zuoraSoapService.query[Subscription](s"AccountId='${account.id}'")
+      accountOpt <- getAccount(memberId)
+      subscriptions <- accountOpt.map(account =>
+        zuoraSoapService.query[Subscription](s"AccountId='${account.id}'")).getOrElse(Future.successful(Nil))
     } yield subscriptions
   }
 
   def memberTierFeatures(memberId: MemberId): Future[Seq[Feature]] =
     for {
-      account <- getAccount(memberId)
-      features <- zuoraRestService.productFeaturesByAccount(account.id)
+      accountOpt <- getAccount(memberId)
+      features <- accountOpt.map(account =>
+        zuoraRestService.productFeaturesByAccount(account.id)).getOrElse(Future.successful(Nil))
     } yield features
 
   def getSubscription(subscriptionId: String): Future[Subscription] = zuoraSoapService.queryOne[Subscription](s"Id='$subscriptionId'")
@@ -157,7 +160,7 @@ class SubscriptionService(val tierPlanRateIds: Map[ProductRatePlan, String],
 
   def createPaymentMethod(memberId: MemberId, customer: Stripe.Customer): Future[UpdateResult] = {
     for {
-      account <- getAccount(memberId)
+      account <- getAccount(memberId).map(_.getOrElse(sys.error(s"createPaymentMethod: Cannot find an account for member ${memberId}")))
       paymentMethod <- zuoraSoapService.authenticatedRequest(CreatePaymentMethod(account, customer))
       result <- zuoraSoapService.authenticatedRequest(EnablePayment(account, paymentMethod))
     } yield result
