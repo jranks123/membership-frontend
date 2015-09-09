@@ -3,6 +3,8 @@ package services.zuora
 import com.github.nscala_time.time.JodaImplicits._
 import com.gu.membership.util.{FutureSupplier, Timing}
 import com.gu.membership.zuora.ZuoraApiConfig
+import com.gu.membership.zuora.soap.Zuora.{Authentication, ZuoraResult}
+import com.gu.membership.zuora.soap.ZuoraAction
 import com.gu.monitoring.{AuthenticationMetrics, StatusMetrics}
 import com.typesafe.scalalogging.LazyLogging
 import model.FeatureChoice

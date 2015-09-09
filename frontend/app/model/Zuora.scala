@@ -1,16 +1,13 @@
 package model
 
 import com.gu.membership.stripe.Stripe
+import com.gu.membership.zuora.soap.Zuora.{Authentication, ZuoraResult}
 import org.joda.time.DateTime
 
 import scala.util.{Failure, Success, Try}
 import scala.xml.Node
 
 object Zuora {
-  trait ZuoraResult
-
-  case class Authentication(token: String, url: String) extends ZuoraResult
-
   case class AmendResult(ids: Seq[String], invoiceItems: Seq[PreviewInvoiceItem]) extends ZuoraResult
   case class CreateResult(id: String) extends ZuoraResult
   case class QueryResult(results: Seq[Map[String, String]]) extends ZuoraResult

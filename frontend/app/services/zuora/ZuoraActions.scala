@@ -3,45 +3,16 @@ package services.zuora
 import com.github.nscala_time.time.Imports._
 import com.gu.membership.salesforce.MemberId
 import com.gu.membership.stripe.Stripe
+import com.gu.membership.zuora.soap.Zuora.Authentication
+import com.gu.membership.zuora.soap.ZuoraAction
 import com.gu.membership.zuora.{Address, ZuoraApiConfig}
 import forms.MemberForm.NameForm
-import model.{FeatureChoice, FreeEventTickets}
+import model.FreeEventTickets
 import model.Zuora._
 import org.joda.time.{DateTime, Period}
 import services.zuora.ZuoraServiceHelpers._
 
-import scala.xml.{NodeSeq, Elem, Null}
-
-trait ZuoraAction[T <: ZuoraResult] {
-  protected val body: Elem
-
-  val singleTransaction = false
-
-  def xml(authOpt: Option[Authentication]) = {
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:api="http://api.zuora.com/"
-                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns1="http://api.zuora.com/"
-                      xmlns:ns2="http://object.api.zuora.com/">
-      <soapenv:Header>
-        { sessionHeader(authOpt) }
-        {if (singleTransaction) {
-          <ns1:CallOptions>
-            <ns1:useSingleTransaction>true</ns1:useSingleTransaction>
-          </ns1:CallOptions>
-        }}
-      </soapenv:Header>
-      <soapenv:Body>{body}</soapenv:Body>
-    </soapenv:Envelope>
-  }
-
-  def sanitized = body.toString()
-
-  private def sessionHeader(authOpt: Option[Authentication]):NodeSeq =
-    authOpt.fold(NodeSeq.Empty) { auth =>
-      <ns1:SessionHeader>
-         <ns1:session>{auth.token}</ns1:session>
-      </ns1:SessionHeader>
-    }
-}
+import scala.xml.{Elem, Null}
 
 case class CreatePaymentMethod(account: Account, customer: Stripe.Customer) extends ZuoraAction[CreateResult] {
   val body =

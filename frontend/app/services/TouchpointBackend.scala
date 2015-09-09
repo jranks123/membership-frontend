@@ -45,7 +45,7 @@ object TouchpointBackend {
 
     val memberRepository = new FrontendMemberRepository(touchpointBackendConfig.salesforce)
 
-    TouchpointBackend(memberRepository, stripeService, zuoraSoapService, zuoraRestService, touchpointBackendConfig.productRatePlans)
+    TouchpointBackend(memberRepository, stripeService, zuoraSoapService, zuoraRestService, ???)
   }
 
   val Normal = TouchpointBackend(BackendType.Default)
