@@ -12,13 +12,6 @@ object Zuora {
   case class SubscribeResult(id: String) extends ZuoraResult
   case class Account(id: String, createdDate: DateTime) extends ZuoraQuery
 
-
-  case class InvoiceItem(id: String, price: Float, serviceStartDate: DateTime, serviceEndDate: DateTime,
-                         chargeNumber: String, productName: String) extends ZuoraQuery {
-    val nextPaymentDate = serviceEndDate.plusDays(1)
-    // TODO: is there a better way?
-    val annual = nextPaymentDate == serviceStartDate.plusYears(1)
-  }
   case class RatePlan(id: String, name: String, productRatePlanId: String) extends ZuoraQuery
   case class RatePlanCharge(id: String, chargedThroughDate: Option[DateTime], effectiveStartDate: DateTime,
                             price: Float) extends ZuoraQuery
