@@ -6,7 +6,7 @@ import com.gu.membership.salesforce.MemberId
 import com.gu.membership.salesforce.Tier.{Partner, Patron}
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.util.Timing
-import com.gu.membership.zuora.soap.Zuora.{InvoiceItem, Amendment, UpdateResult}
+import com.gu.membership.zuora.soap.Zuora.{Feature, InvoiceItem, Amendment, UpdateResult}
 import com.typesafe.scalalogging.LazyLogging
 import forms.MemberForm.JoinForm
 import model.{FeatureChoice, MembershipSummary}

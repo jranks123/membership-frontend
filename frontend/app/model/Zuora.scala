@@ -8,15 +8,16 @@ import org.joda.time.DateTime
 object Zuora {
   case class AmendResult(ids: Seq[String], invoiceItems: Seq[PreviewInvoiceItem]) extends ZuoraResult
 
-  //TODO: Different to membership-common, resolve
+  //TODO: Below Queries/Results also exist to membership-common, needs resolving!!
   case class SubscribeResult(id: String) extends ZuoraResult
   case class Account(id: String, createdDate: DateTime) extends ZuoraQuery
-
   case class RatePlan(id: String, name: String, productRatePlanId: String) extends ZuoraQuery
   case class RatePlanCharge(id: String, chargedThroughDate: Option[DateTime], effectiveStartDate: DateTime,
                             price: Float) extends ZuoraQuery
   case class Subscription(id: String, version: Int, termStartDate: DateTime, contractAcceptanceDate: DateTime) extends ZuoraQuery
-  case class Feature(id: String, code: String) extends ZuoraQuery
+
+
+
   case class Usage(description: String) extends ZuoraQuery
 
   trait Error extends Throwable {
