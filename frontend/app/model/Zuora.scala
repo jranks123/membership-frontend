@@ -1,20 +1,18 @@
 package model
 
 import com.gu.membership.stripe.Stripe
-import com.gu.membership.zuora.soap.Zuora.{Authentication, ZuoraQuery, ZuoraResult}
+import com.gu.membership.zuora.soap.Zuora._
 import com.gu.membership.zuora.soap.ZuoraReaders.{ZuoraQueryReader, ZuoraReader, ZuoraResultReader}
 import org.joda.time.DateTime
 
 object Zuora {
   case class AmendResult(ids: Seq[String], invoiceItems: Seq[PreviewInvoiceItem]) extends ZuoraResult
-  case class CreateResult(id: String) extends ZuoraResult
+
+  //TODO: Different to membership-common, resolve
   case class SubscribeResult(id: String) extends ZuoraResult
-  case class UpdateResult(id: String) extends ZuoraResult
-
-
   case class Account(id: String, createdDate: DateTime) extends ZuoraQuery
-  case class Amendment(id: String, amendType: String, contractEffectiveDate: DateTime, subscriptionId: String)
-    extends ZuoraQuery
+
+
   case class InvoiceItem(id: String, price: Float, serviceStartDate: DateTime, serviceEndDate: DateTime,
                          chargeNumber: String, productName: String) extends ZuoraQuery {
     val nextPaymentDate = serviceEndDate.plusDays(1)
@@ -36,8 +34,6 @@ object Zuora {
 
     override def getMessage: String = s"$code: $message"
   }
-
-
 
   case class FaultError(code: String, message: String) extends Error
   case class ResultError(code: String, message: String) extends Error {
@@ -167,7 +163,6 @@ object ZuoraDeserializer {
     RatePlanCharge(result("Id"), result.get("ChargedThroughDate").map(new DateTime(_)),
       new DateTime(result("EffectiveStartDate")), result("Price").toFloat)
   }
-
   implicit val subscriptionReader = ZuoraQueryReader("Subscription", Seq("Id", "Version", "TermStartDate", "ContractAcceptanceDate")) { result =>
     Subscription(result("Id"), result("Version").toInt, new DateTime(result("TermStartDate")), new DateTime(result("ContractAcceptanceDate")))
   }
