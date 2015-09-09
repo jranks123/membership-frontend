@@ -1,20 +1,16 @@
 package model
 
 import com.gu.membership.stripe.Stripe
-import com.gu.membership.zuora.soap.Zuora.{Authentication, ZuoraResult}
+import com.gu.membership.zuora.soap.Zuora.{Authentication, ZuoraQuery, ZuoraResult}
+import com.gu.membership.zuora.soap.ZuoraReaders.{ZuoraQueryReader, ZuoraReader, ZuoraResultReader}
 import org.joda.time.DateTime
-
-import scala.util.{Failure, Success, Try}
-import scala.xml.Node
 
 object Zuora {
   case class AmendResult(ids: Seq[String], invoiceItems: Seq[PreviewInvoiceItem]) extends ZuoraResult
   case class CreateResult(id: String) extends ZuoraResult
-  case class QueryResult(results: Seq[Map[String, String]]) extends ZuoraResult
   case class SubscribeResult(id: String) extends ZuoraResult
   case class UpdateResult(id: String) extends ZuoraResult
 
-  trait ZuoraQuery
 
   case class Account(id: String, createdDate: DateTime) extends ZuoraQuery
   case class Amendment(id: String, amendType: String, contractEffectiveDate: DateTime, subscriptionId: String)
@@ -104,88 +100,9 @@ object Zuora {
   }
 }
 
-object ZuoraReaders {
-  import model.Zuora._
-
-  trait ZuoraReader[T <: ZuoraResult] {
-    val responseTag: String
-    val multiResults = false
-
-    def read(body: String): Either[Error, T] = {
-      Try(scala.xml.XML.loadString(body)) match {
-        case Failure(ex) => Left(InternalError("XML_PARSE_ERROR", ex.getMessage))
-
-        case Success(node) =>
-          val body = scala.xml.Utility.trim((scala.xml.Utility.trim(node) \ "Body").head)
-
-          (body \ "Fault").headOption.fold {
-            val resultNode = if (multiResults) "results" else "result"
-            val result = body \ responseTag \ resultNode
-
-            extractEither(result.head)
-          } { fault =>
-            Left(FaultError((fault \ "faultcode").text, (fault \ "faultstring").text))
-          }
-      }
-    }
-
-    protected def extractEither(result: Node): Either[Error, T]
-  }
-
-  object ZuoraReader {
-    def apply[T <: ZuoraResult](tag: String)(extractFn: Node => Either[Error, T]) = new ZuoraReader[T] {
-      val responseTag = tag
-      protected def extractEither(result: Node): Either[Error, T] = extractFn(result)
-    }
-  }
-
-  trait ZuoraResultReader[T <: ZuoraResult] extends ZuoraReader[T] {
-    protected def extractEither(result: Node): Either[Error, T] = {
-      if ((result \ "Success").text == "true") {
-        Right(extract(result))
-      } else {
-        val errors = (result \ "Errors").map { node => ResultError((node \ "Code").text, (node \ "Message").text) }
-        Left(errors.head) // TODO: return more than just the first error
-      }
-    }
-
-    protected def extract(result: Node): T
-  }
-
-  object ZuoraResultReader {
-    def create[T <: ZuoraResult](tag: String, multi: Boolean, extractFn: Node => T) = new ZuoraResultReader[T] {
-      val responseTag = tag
-      override val multiResults: Boolean = multi
-      protected def extract(result: Node) = extractFn(result)
-    }
-
-    def apply[T <: ZuoraResult](tag: String)(extractFn: Node => T) = create(tag, multi=false, extractFn)
-    def multi[T <: ZuoraResult](tag: String)(extractFn: Node => T) = create(tag, multi=true, extractFn)
-  }
-
-  trait ZuoraQueryReader[T <: ZuoraQuery] {
-    val table: String
-    val fields: Seq[String]
-
-    def read(results: Seq[Map[String, String]]): Seq[T] = results.map(extract)
-
-    def extract(result: Map[String, String]): T
-  }
-
-  object ZuoraQueryReader {
-    def apply[T <: ZuoraQuery](tableName: String, fieldSeq: Seq[String])(extractFn: Map[String, String] => T) =
-      new ZuoraQueryReader[T] {
-        val table = tableName
-        val fields = fieldSeq
-
-        def extract(results: Map[String, String]) = extractFn(results)
-      }
-  }
-}
 
 object ZuoraDeserializer {
   import model.Zuora._
-  import model.ZuoraReaders._
 
   implicit val authenticationReader = ZuoraReader("loginResponse") { result =>
     Right(Authentication((result \ "Session").text, (result \ "ServerUrl").text))
@@ -209,23 +126,6 @@ object ZuoraDeserializer {
     CreateResult((result \ "Id").text)
   }
 
-  implicit val queryResultReader = ZuoraReader("queryResponse") { result =>
-    if ((result \ "done").text == "true") {
-      val records =
-        // Zuora still returns a records node even if there were no results
-        if ((result \ "size").text.toInt == 0) {
-          Nil
-        } else {
-          (result \ "records").map { record =>
-            record.child.map { node => (node.label, node.text)}.toMap
-          }
-        }
-
-      Right(QueryResult(records))
-    } else {
-      Left(InternalError("QUERY_ERROR", "The query was not complete (we don't support iterating query results)"))
-    }
-  }
 
   implicit val usageReader = ZuoraQueryReader("Usage", Seq("Description")) { result =>
     Usage(result("Description"))

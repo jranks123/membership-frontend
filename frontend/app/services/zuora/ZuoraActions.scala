@@ -3,9 +3,8 @@ package services.zuora
 import com.github.nscala_time.time.Imports._
 import com.gu.membership.salesforce.MemberId
 import com.gu.membership.stripe.Stripe
-import com.gu.membership.zuora.soap.Zuora.Authentication
+import com.gu.membership.zuora.Address
 import com.gu.membership.zuora.soap.ZuoraAction
-import com.gu.membership.zuora.{Address, ZuoraApiConfig}
 import forms.MemberForm.NameForm
 import model.FreeEventTickets
 import model.Zuora._
@@ -38,22 +37,6 @@ case class EnablePayment(account: Account, paymentMethod: CreateResult) extends 
     </ns1:update>
 }
 
-case class Login(apiConfig: ZuoraApiConfig) extends ZuoraAction[Authentication] {
-  val body =
-    <api:login>
-      <api:username>{apiConfig.username}</api:username>
-      <api:password>{apiConfig.password}</api:password>
-    </api:login>
-
-  override def sanitized = "<api:login>...</api:login>"
-}
-
-case class Query(query: String) extends ZuoraAction[QueryResult] {
-  val body =
-    <ns1:query>
-      <ns1:queryString>{query}</ns1:queryString>
-    </ns1:query>
-}
 
 case class Subscribe(memberId: MemberId,
                      customerOpt: Option[Stripe.Customer],
