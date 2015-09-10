@@ -4,35 +4,25 @@ import com.github.nscala_time.time.JodaImplicits._
 import com.gu.membership.util.{FutureSupplier, Timing}
 import com.gu.membership.zuora.ZuoraApiConfig
 import com.gu.membership.zuora.soap._
+import com.gu.membership.zuora.soap.actions.Action
+import com.gu.membership.zuora.soap.actions.Actions._
+import com.gu.membership.zuora.soap.readers.{ZuoraQueryReader, ZuoraReader}
 import com.gu.monitoring.{AuthenticationMetrics, StatusMetrics}
 import com.typesafe.scalalogging.LazyLogging
 import model.FeatureChoice
 import monitoring.TouchpointBackendMetrics
-import org.joda.time.format.ISODateTimeFormat
-import org.joda.time.{DateTime, DateTimeZone, ReadableDuration}
+import org.joda.time.{DateTime, ReadableDuration}
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WS
 import utils.ScheduledTask
-import com.gu.membership.zuora.soap.readers.{ZuoraQueryReader, ZuoraReader}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 case class ZuoraServiceError(s: String) extends Throwable {
   override def getMessage: String = s
-}
-
-object ZuoraServiceHelpers {
-  def formatDateTime(dt: DateTime): String = {
-    val str = ISODateTimeFormat.dateTime().print(dt.withZone(DateTimeZone.UTC))
-    // Zuora doesn't accept Z for timezone
-    str.replace("Z", "+00:00")
-  }
-
-  def formatQuery[T <: ZuoraQuery](reader: ZuoraQueryReader[T], where: String) =
-    s"SELECT ${reader.fields.mkString(",")} FROM ${reader.table} WHERE $where"
 }
 
 class ZuoraSoapService(val apiConfig: ZuoraApiConfig) extends LazyLogging {
@@ -74,7 +64,7 @@ class ZuoraSoapService(val apiConfig: ZuoraApiConfig) extends LazyLogging {
 
   def getAuth = authSupplier.get()
 
-  def authenticatedRequest[T <: ZuoraResult](action: => ZuoraAction[T])(implicit reader: ZuoraReader[T]): Future[T] =
+  def authenticatedRequest[T <: ZuoraResult](action: => Action[T])(implicit reader: ZuoraReader[T]): Future[T] =
     getAuth.flatMap { auth => request(action, Some(auth)) }
 
   def query[T <: ZuoraQuery](where: String)(implicit reader: ZuoraQueryReader[T]): Future[Seq[T]] = {
@@ -90,7 +80,7 @@ class ZuoraSoapService(val apiConfig: ZuoraApiConfig) extends LazyLogging {
     }
   }
 
-  private def request[T <: ZuoraResult](action: ZuoraAction[T], authOpt: Option[Authentication] = None)
+  private def request[T <: ZuoraResult](action: Action[T], authOpt: Option[Authentication] = None)
                                        (implicit reader: ZuoraReader[T]): Future[T] = {
 
     val url = apiConfig.url.toString()

@@ -7,6 +7,7 @@ import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Customer
 import com.gu.membership.util.{FutureSupplier, Timing}
+import com.gu.membership.zuora.soap.actions.Actions.CreateFreeEventUsage
 import com.gu.membership.zuora.soap.{PreviewInvoiceItem, CreateResult}
 import com.gu.membership.zuora.soap.readers.Instances._
 import com.typesafe.scalalogging.LazyLogging
@@ -24,7 +25,6 @@ import play.api.libs.concurrent.Akka
 import play.api.libs.json.Json
 import services.EventbriteService._
 import tracking._
-import zuora.CreateFreeEventUsage
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
