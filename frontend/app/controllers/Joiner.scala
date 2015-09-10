@@ -9,6 +9,7 @@ import com.gu.identity.play.{StatusFields, IdMinimalUser}
 import com.gu.membership.salesforce.{PaidMember, ScalaforceError, Tier}
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Serializer._
+import com.gu.membership.zuora.soap.Zuora.ResultError
 import com.netaporter.uri.dsl._
 import com.typesafe.scalalogging.LazyLogging
 import configuration.{Config, CopyConfig, Email}
@@ -189,7 +190,7 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
           result
         }.recover {
           case error: Stripe.Error => Forbidden(Json.toJson(error))
-          case error: Zuora.ResultError => Forbidden
+          case error: ResultError => Forbidden
           case error: ScalaforceError => Forbidden
           case error: MemberServiceError => Forbidden
         }

@@ -4,9 +4,9 @@ import actions._
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Serializer._
+import com.gu.membership.zuora.soap.Zuora.{PaidPreview, SubscriptionDetails, ResultError}
 import forms.MemberForm._
-import model.Zuora.{PaidPreview, SubscriptionDetails}
-import model.{FlashMessage, PageInfo, Zuora}
+import model.{FlashMessage, PageInfo}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.{Controller, DiscardingCookie, Result}
@@ -136,7 +136,7 @@ trait UpgradeTier {
 
     futureResult.map(_.discardingCookies(DiscardingCookie("GU_MEM"))).recover {
       case error: Stripe.Error => Forbidden(Json.toJson(error))
-      case error: Zuora.ResultError => Forbidden
+      case error: ResultError => Forbidden
       case error: ScalaforceError => Forbidden
     }
   }

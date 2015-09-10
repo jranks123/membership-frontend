@@ -7,7 +7,8 @@ import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Customer
 import com.gu.membership.util.{FutureSupplier, Timing}
-import com.gu.membership.zuora.soap.Zuora.CreateResult
+import com.gu.membership.zuora.soap.Readers._
+import com.gu.membership.zuora.soap.Zuora.{PreviewInvoiceItem, CreateResult}
 import com.typesafe.scalalogging.LazyLogging
 import configuration.Config
 import controllers.IdentityRequest
@@ -16,8 +17,6 @@ import model.Benefits.DiscountTicketTiers
 import model.Eventbrite.{EBCode, EBOrder, EBTicketClass}
 import model.FreeEventTickets
 import model.RichEvent._
-import model.Zuora.PreviewInvoiceItem
-import model.ZuoraDeserializer.createResultReader
 import monitoring.MemberMetrics
 import org.joda.time.Period
 import play.api.Play.current

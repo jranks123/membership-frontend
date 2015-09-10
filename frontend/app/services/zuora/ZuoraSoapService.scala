@@ -8,8 +8,6 @@ import com.gu.membership.zuora.soap.{Login, Query, ZuoraAction}
 import com.gu.monitoring.{AuthenticationMetrics, StatusMetrics}
 import com.typesafe.scalalogging.LazyLogging
 import model.FeatureChoice
-import model.Zuora._
-import model.ZuoraDeserializer._
 import monitoring.TouchpointBackendMetrics
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone, ReadableDuration}
@@ -40,8 +38,7 @@ object ZuoraServiceHelpers {
 
 class ZuoraSoapService(val apiConfig: ZuoraApiConfig) extends LazyLogging {
   import ZuoraServiceHelpers._
-  import com.gu.membership.zuora.soap.ZuoraDeserializer._
-
+  import com.gu.membership.zuora.soap.Readers._
 
   val metrics = new TouchpointBackendMetrics with StatusMetrics with AuthenticationMetrics {
     val backendEnv = apiConfig.envName
