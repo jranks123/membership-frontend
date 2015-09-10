@@ -4,7 +4,7 @@ import com.github.nscala_time.time.Imports._
 import com.gu.membership.salesforce.MemberId
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.zuora.Address
-import com.gu.membership.zuora.soap.Zuora._
+import com.gu.membership.zuora.soap._
 import com.gu.membership.zuora.soap.ZuoraAction
 import forms.MemberForm.NameForm
 import model.FreeEventTickets

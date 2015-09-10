@@ -4,7 +4,7 @@ import actions._
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Serializer._
-import com.gu.membership.zuora.soap.Zuora.{PaidPreview, SubscriptionDetails, ResultError}
+import com.gu.membership.zuora.soap.{PaidPreview, SubscriptionDetails, ResultError}
 import forms.MemberForm._
 import model.{FlashMessage, PageInfo}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext

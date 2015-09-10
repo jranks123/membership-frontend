@@ -3,8 +3,7 @@ package services.zuora
 import com.github.nscala_time.time.JodaImplicits._
 import com.gu.membership.util.{FutureSupplier, Timing}
 import com.gu.membership.zuora.ZuoraApiConfig
-import com.gu.membership.zuora.soap.Zuora._
-import com.gu.membership.zuora.soap.{Login, Query, ZuoraAction}
+import com.gu.membership.zuora.soap._
 import com.gu.monitoring.{AuthenticationMetrics, StatusMetrics}
 import com.typesafe.scalalogging.LazyLogging
 import model.FeatureChoice
@@ -17,7 +16,7 @@ import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WS
 import utils.ScheduledTask
-import com.gu.membership.zuora.soap.ZuoraReaders.{ZuoraQueryReader, ZuoraReader}
+import com.gu.membership.zuora.soap.readers.{ZuoraQueryReader, ZuoraReader}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -38,7 +37,7 @@ object ZuoraServiceHelpers {
 
 class ZuoraSoapService(val apiConfig: ZuoraApiConfig) extends LazyLogging {
   import ZuoraServiceHelpers._
-  import com.gu.membership.zuora.soap.Readers._
+  import com.gu.membership.zuora.soap.readers.Instances._
 
   val metrics = new TouchpointBackendMetrics with StatusMetrics with AuthenticationMetrics {
     val backendEnv = apiConfig.envName

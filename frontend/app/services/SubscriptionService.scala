@@ -6,12 +6,13 @@ import com.gu.membership.salesforce.MemberId
 import com.gu.membership.salesforce.Tier.{Partner, Patron}
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.util.Timing
-import com.gu.membership.zuora.soap.Zuora._
-import com.gu.membership.zuora.soap.Readers._
+import com.gu.membership.zuora.soap._
+import com.gu.membership.zuora.soap.readers.Instances._
 import com.typesafe.scalalogging.LazyLogging
 import forms.MemberForm.JoinForm
 import model.{FeatureChoice, MembershipSummary}
 import org.joda.time.DateTime
+import services.zuora.ZuoraServiceHelpers
 import services.zuora._
 import ZuoraServiceHelpers.formatDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
