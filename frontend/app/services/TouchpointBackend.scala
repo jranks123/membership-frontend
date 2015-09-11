@@ -7,7 +7,7 @@ import com.gu.membership.salesforce._
 import com.gu.membership.stripe.{Stripe, StripeService}
 import com.gu.membership.touchpoint.TouchpointBackendConfig
 import com.gu.membership.zuora.{rest, soap}
-import com.gu.monitoring.StatusMetrics
+import com.gu.monitoring.{ServiceMetrics, StatusMetrics}
 import com.netaporter.uri.dsl._
 import configuration.Config
 import monitoring.TouchpointBackendMetrics
@@ -16,14 +16,17 @@ import tracking._
 import utils.TestUsers.isTestUser
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import play.libs.Akka
 
 object TouchpointBackend {
 
   import TouchpointBackendConfig.BackendType
 
-  implicit class TouchpointBackendConfigLike(config: TouchpointBackendConfig) {
-    val zuoraRestUrl: com.typesafe.config.Config => String =
-      _.getString(s"touchpoint.backend.environments.${config.zuora.envName}.zuora.api.restUrl")
+  implicit class TouchpointBackendConfigLike(tpbc: TouchpointBackendConfig) {
+    def zuoraEnvName: String = tpbc.zuora.envName
+    def zuoraMetrics(component: String): ServiceMetrics = new ServiceMetrics(zuoraEnvName, "membership", component)
+    def zuoraRestUrl(config: com.typesafe.config.Config): String =
+      config.getString(s"touchpoint.backend.environments.$zuoraEnvName.zuora.api.restUrl")
   }
 
   def apply(backendType: TouchpointBackendConfig.BackendType): TouchpointBackend = {
@@ -31,21 +34,21 @@ object TouchpointBackend {
     TouchpointBackend(touchpointBackendConfig)
   }
 
-  def apply(touchpointBackendConfig: TouchpointBackendConfig): TouchpointBackend = {
-    val stripeService = new StripeService(touchpointBackendConfig.stripe, new TouchpointBackendMetrics with StatusMetrics {
-      val backendEnv = touchpointBackendConfig.stripe.envName
+  def apply(backend: TouchpointBackendConfig): TouchpointBackend = {
+    val stripeService = new StripeService(backend.stripe, new TouchpointBackendMetrics with StatusMetrics {
+      val backendEnv = backend.stripe.envName
       val service = "Stripe"
     })
 
-    val backendConfig = touchpointBackendConfig.zuora.copy(
-      url = touchpointBackendConfig.zuoraRestUrl(Config.config))
+    val backendConfig = backend.zuora.copy(
+      url = backend.zuoraRestUrl(Config.config))
 
-    val zuoraSoapClient = new soap.Client(touchpointBackendConfig.zuora, ???, ???)
-    val zuoraRestClient = new rest.Client(backendConfig, ???)
+    val zuoraSoapClient = new soap.Client(backend.zuora, backend.zuoraMetrics("zuora-soap-client"), Akka.system())
+    val zuoraRestClient = new rest.Client(backendConfig, backend.zuoraMetrics("zuora-rest-client"))
+    val subscriptionService = new SubscriptionService(???, zuoraSoapClient, zuoraRestClient, backend.zuoraMetrics("zuora-rest-client"))
+    val memberRepository = new FrontendMemberRepository(backend.salesforce)
 
-    val memberRepository = new FrontendMemberRepository(touchpointBackendConfig.salesforce)
-
-    TouchpointBackend(memberRepository, stripeService, zuoraSoapClient, zuoraRestClient, ???)
+    TouchpointBackend(memberRepository, stripeService, zuoraSoapClient, zuoraRestClient, subscriptionService)
   }
 
   val Normal = TouchpointBackend(BackendType.Default)
@@ -62,9 +65,7 @@ case class TouchpointBackend(memberRepository: FrontendMemberRepository,
                              stripeService: StripeService,
                              zuoraSoapClient: soap.Client,
                              zuoraRestClient: rest.Client,
-                             products: Map[ProductRatePlan, String]) extends ActivityTracking {
-
-  val subscriptionService = new SubscriptionService(products, zuoraSoapClient, zuoraRestClient)
+                             subscriptionService: SubscriptionService) extends ActivityTracking {
 
   def updateDefaultCard(member: PaidMember, token: String): Future[Stripe.Card] = {
     for {

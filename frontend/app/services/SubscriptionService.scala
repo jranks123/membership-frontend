@@ -10,6 +10,7 @@ import com.gu.membership.zuora.{rest, soap}
 import com.gu.membership.zuora.soap._
 import com.gu.membership.zuora.soap.actions.Actions._
 import com.gu.membership.zuora.soap.readers.Instances._
+import com.gu.monitoring.ServiceMetrics
 import com.typesafe.scalalogging.LazyLogging
 import forms.MemberForm.JoinForm
 import model.{FreeEventTickets, FeatureChoice, MembershipSummary}
@@ -75,7 +76,8 @@ object SubscriptionService {
 
 class SubscriptionService(val tierPlanRateIds: Map[ProductRatePlan, String],
                           val zuoraSoapClient: soap.Client,
-                          val zuoraRestClient: rest.Client) extends LazyLogging {
+                          val zuoraRestClient: rest.Client,
+                          val metrics: ServiceMetrics) extends LazyLogging {
 
   import SubscriptionService._
   val MembershipProductType = "Membership"
@@ -97,7 +99,7 @@ class SubscriptionService(val tierPlanRateIds: Map[ProductRatePlan, String],
 
   def currentRatePlan(subscription: rest.Subscription): Future[Option[rest.RatePlan]] = subscription.ratePlans match {
     case onlyRatePlan :: Nil => Future.successful(Some(onlyRatePlan))
-    case multipleRatePlans => Timing.record(???, "currentRatePlan-for-multipleRatePlans") {
+    case multipleRatePlans => Timing.record(metrics, "currentRatePlan-for-multipleRatePlans") {
       for {
         subscriptionStatus <- getSubscriptionStatus(subscription)
         currentRatePlan <- getRatePlan(subscriptionStatus.currentVersion)
@@ -169,14 +171,14 @@ class SubscriptionService(val tierPlanRateIds: Map[ProductRatePlan, String],
       zuoraFeatures <- membershipFeatures
       features = featuresPerTier(zuoraFeatures)(joinData.plan, joinData.featureChoice)
       result <- zuoraSoapClient.authenticatedRequest(Subscribe(memberId,
-                                                      customerOpt,
-                                                      tierPlanRateIds(joinData.plan),
-                                                      joinData.name.first,
-                                                      joinData.name.last,
-                                                      joinData.deliveryAddress,
-                                                      paymentDelay,
-                                                      casId,
-                                                      zuoraFeatures.map(_.id)))
+                                                     customerOpt,
+                                                     tierPlanRateIds(joinData.plan),
+                                                     joinData.name.first,
+                                                     joinData.name.last,
+                                                     joinData.deliveryAddress,
+                                                     paymentDelay,
+                                                     casId,
+                                                     zuoraFeatures.map(_.id)))
     } yield result
 
   def getPaymentSummary(memberId: MemberId): Future[PaymentSummary] = {
