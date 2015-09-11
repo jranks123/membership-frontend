@@ -138,7 +138,7 @@ trait MemberService extends LazyLogging with ActivityTracking {
       (account, subscription) <- tp.subscriptionService.accountWithLatestMembershipSubscription(member)
       description = s"event-id:${event.id};order-id:${order.id}"
       action = CreateFreeEventUsage(account.id, description, quantity, subscription.subscriptionNumber)
-      result <- tp.zuoraSoapService.authenticatedRequest(action)
+      result <- tp.zuoraSoapClient.authenticatedRequest(action)
     } yield {
       logger.info(s"Recorded a complimentary event ticket usage for account ${account.id}, subscription: ${subscription.subscriptionNumber}, details: $description")
       result

@@ -6,18 +6,16 @@ import com.gu.membership.salesforce.Member.Keys
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.{Stripe, StripeService}
 import com.gu.membership.touchpoint.TouchpointBackendConfig
+import com.gu.membership.zuora.{rest, soap}
 import com.gu.monitoring.StatusMetrics
 import com.netaporter.uri.dsl._
 import configuration.Config
 import monitoring.TouchpointBackendMetrics
 import play.api.libs.json.Json
-import services.zuora.{ZuoraRestService, ZuoraSoapService}
 import tracking._
 import utils.TestUsers.isTestUser
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 
 object TouchpointBackend {
 
@@ -39,13 +37,15 @@ object TouchpointBackend {
       val service = "Stripe"
     })
 
-    val zuoraSoapService = new ZuoraSoapService(touchpointBackendConfig.zuora)
-    val zuoraRestService = new ZuoraRestService(touchpointBackendConfig
-      .zuora.copy(url = touchpointBackendConfig.zuoraRestUrl(Config.config)))
+    val backendConfig = touchpointBackendConfig.zuora.copy(
+      url = touchpointBackendConfig.zuoraRestUrl(Config.config))
+
+    val zuoraSoapClient = new soap.Client(touchpointBackendConfig.zuora, ???, ???)
+    val zuoraRestClient = new rest.Client(backendConfig, ???)
 
     val memberRepository = new FrontendMemberRepository(touchpointBackendConfig.salesforce)
 
-    TouchpointBackend(memberRepository, stripeService, zuoraSoapService, zuoraRestService, ???)
+    TouchpointBackend(memberRepository, stripeService, zuoraSoapClient, zuoraRestClient, ???)
   }
 
   val Normal = TouchpointBackend(BackendType.Default)
@@ -60,11 +60,11 @@ object TouchpointBackend {
 
 case class TouchpointBackend(memberRepository: FrontendMemberRepository,
                              stripeService: StripeService,
-                             zuoraSoapService: ZuoraSoapService,
-                             zuoraRestService: ZuoraRestService,
+                             zuoraSoapClient: soap.Client,
+                             zuoraRestClient: rest.Client,
                              products: Map[ProductRatePlan, String]) extends ActivityTracking {
 
-  val subscriptionService = new SubscriptionService(products, zuoraSoapService, zuoraRestService)
+  val subscriptionService = new SubscriptionService(products, zuoraSoapClient, zuoraRestClient)
 
   def updateDefaultCard(member: PaidMember, token: String): Future[Stripe.Card] = {
     for {

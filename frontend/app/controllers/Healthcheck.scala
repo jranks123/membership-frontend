@@ -9,12 +9,12 @@ import services.{GuardianLiveEventService, TouchpointBackend}
 case class Test(name: String, ok: () => Boolean)
 
 object Healthcheck extends Controller {
-  val zuoraService = TouchpointBackend.Normal.zuoraSoapService
+  val zuoraService = TouchpointBackend.Normal.zuoraSoapClient
 
   val tests = Seq(
     Test("Events", () => GuardianLiveEventService.events.nonEmpty),
-    Test("CloudWatch", () => CloudWatchHealth.hasPushedMetricSuccessfully),
-    Test("Zuora", () => zuoraService.lastPingTimeWithin(2.minutes))
+    Test("CloudWatch", () => CloudWatchHealth.hasPushedMetricSuccessfully)
+    //Test("Zuora", () => zuoraService.lastPingTimeWithin(2.minutes))
   )
 
   def healthcheck() = Action { req =>
