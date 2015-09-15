@@ -1,7 +1,7 @@
 package services
 
 import com.gu.identity.play.IdMinimalUser
-import com.gu.membership.model.{FriendTierPlan, ProductRatePlan}
+import com.gu.membership.model.FriendTierPlan
 import com.gu.membership.salesforce.Member.Keys
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.{Stripe, StripeService}
@@ -12,11 +12,12 @@ import com.netaporter.uri.dsl._
 import configuration.Config
 import monitoring.TouchpointBackendMetrics
 import play.api.libs.json.Json
+import play.libs.Akka
 import tracking._
 import utils.TestUsers.isTestUser
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import play.libs.Akka
 
 object TouchpointBackend {
 
