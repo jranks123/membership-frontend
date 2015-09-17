@@ -1,0 +1,30 @@
+@(
+    pageInfo: model.PageInfo,
+    events: model.RichEvent.EventGroup,
+    featuredEventsOpt: Option[model.RichEvent.EventGroup],
+    partnerEventsOpt: Option[model.RichEvent.EventGroup]
+)
+
+@import model.SVG.Logos
+
+@main("Events", pageInfo=pageInfo) {
+    <main role="main" class="l-constrained">
+        @fragments.event.headerBar(
+            title="Events, discussions, debates, interviews, keynote speeches and festivals exclusively for Guardian Members",
+            logo=Logos.guardianLive
+        )
+        @fragments.event.remainingTickets("listing", Seq.empty)
+
+        @for(featuredEvents <- featuredEventsOpt if featuredEvents.events.nonEmpty) {
+            @fragments.eventListings.features(featuredEvents)
+        }
+
+        @fragments.eventListings.listing(events, "Sorry, no matching events were found.", isLead=false, isFilterable=false)
+
+        @for(partnerEvents <- partnerEventsOpt if partnerEvents.events.nonEmpty) {
+            @fragments.eventListings.listing(partnerEvents, "Sorry, no matching events were found.", isLead=false, isFilterable=false)
+        }
+    </main>
+
+    @fragments.tier.joinListing()
+}

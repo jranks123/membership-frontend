@@ -1,13 +1,47 @@
 package model
 
+import com.github.nscala_time.time.Imports._
 import com.gu.contentapi.client.model.Content
 import configuration.Links
 import controllers.routes
 import model.EventMetadata.{HighlightsMetadata, Metadata}
 import model.Eventbrite.EBEvent
+import org.joda.time.LocalDate
 import services.MasterclassData
 
+import scala.collection.immutable.SortedMap
+
 object RichEvent {
+
+  // Used for arbitrary groupings of events with custom titles
+  case class EventGroup(sequenceTitle: String, events: Seq[RichEvent])
+
+  case class EventBrandCollection(
+    live: Seq[RichEvent],
+    local: Seq[RichEvent],
+    masterclasses: Seq[RichEvent]
+  )
+
+  case class CalendarMonthDayGroup(
+    title: String,
+    list: SortedMap[LocalDate, SortedMap[LocalDate, Seq[RichEvent]]]
+  )
+
+  def chronologicalSort(events: Seq[RichEvent]) = {
+    events.sortWith(_.event.start < _.event.start)
+  }
+
+  def groupEventsByDay(events: Seq[RichEvent])(implicit ordering: Ordering[LocalDate]): SortedMap[LocalDate, Seq[RichEvent]] = {
+    SortedMap(events.groupBy(_.start.toLocalDate).toSeq :_*)(ordering)
+  }
+
+  def groupEventsByDayAndMonth(events: Seq[RichEvent])(implicit ordering: Ordering[LocalDate]): SortedMap[LocalDate, SortedMap[LocalDate, Seq[RichEvent]]] = {
+    SortedMap(groupEventsByDay(events)(ordering).groupBy(_._1.withDayOfMonth(1)).toSeq :_*)(ordering)
+  }
+
+  def groupEventsByMonth(events: Seq[RichEvent]): SortedMap[LocalDate, Seq[RichEvent]] = {
+    SortedMap(events.groupBy(_.start.toLocalDate.withDayOfMonth(1)).toSeq :_*)
+  }
 
   case class GridImage(assets: List[Grid.Asset], metadata: Grid.Metadata)
 

@@ -5,14 +5,15 @@ import com.gu.membership.salesforce.Tier
 import com.netaporter.uri.Uri
 import com.netaporter.uri.dsl._
 import configuration.Config
-import org.joda.time.Instant
+import org.joda.time.{PeriodType, Instant}
 import org.joda.time.format.ISODateTimeFormat
 import play.api.Logger
 import play.api.data.validation.ValidationError
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import utils.StringUtils._
-import views.support.Asset
+import views.support.Dates.YearMonthDayHours
+import views.support.{Dates, Asset}
 
 import scala.util.{Failure, Success, Try}
 
@@ -46,24 +47,28 @@ object Eventbrite {
     lazy val blurb = truncateToWordBoundary(text, 120)
   }
 
-  case class EBAddress(address_1: Option[String],
-                       address_2: Option[String],
-                       city: Option[String],
-                       region: Option[String],
-                       postal_code: Option[String],
-                       country: Option[String]) extends EBObject {
-
+  case class EBAddress(
+    address_1: Option[String],
+    address_2: Option[String],
+    city: Option[String],
+    region: Option[String],
+    postal_code: Option[String],
+    country: Option[String]
+  ) extends EBObject {
     lazy val toSeq: Seq[String] = Seq(address_1, address_2, city, region, postal_code).flatten
-
-    lazy val asLine: Option[String] = if (toSeq.isEmpty) None else Some(toSeq.mkString(", "))
+    lazy val asLine = seqToLine(toSeq)
   }
 
-  case class EBVenue(address: Option[EBAddress], name: Option[String]) extends EBObject {
+  case class EBVenue(
+    address: Option[EBAddress],
+    name: Option[String]
+  ) extends EBObject {
     lazy val addressLine = address.flatMap(_.asLine)
-    lazy val venueWithCity = Seq(name, address.flatMap(_.city)).flatten.mkString(", ")
-
-    lazy val googleMapsLink: Option[String] =
+    lazy val addressShortLine = seqToLine(Seq(name, address.flatMap(_.city)).flatten)
+    lazy val addressDefaultLine = seqToLine(Seq(name, address.flatMap(_.city), address.flatMap(_.postal_code)).flatten)
+    lazy val googleMapsLink: Option[String] = {
       addressLine.map(al => googleMapsUri ? ("q" -> (name.map(_ + ", ").mkString + al)))
+    }
   }
 
   def penceToPounds(priceInPence: Double): Float = {
@@ -83,7 +88,6 @@ object Eventbrite {
     lazy val formattedPrice = formatPriceWithCurrency(value)
   }
 
-
   case class EventTimes(created: Instant, start: DateTime)
 
   /**
@@ -100,6 +104,8 @@ object Eventbrite {
                            sales_start: Option[Instant],
                            hidden: Option[Boolean]) extends EBObject {
     val isHidden = hidden.contains(true)
+
+    val isGuestList = isHidden && name.toLowerCase.contains("guestlist")
 
     val isMemberBenefit = isHidden && name.toLowerCase.startsWith("guardian member")
     val isComplimentary = isHidden && name.toLowerCase.startsWith("member's ticket at no extra cost")
@@ -167,6 +173,9 @@ object Eventbrite {
     val isPossiblyMissingDiscount = !isFree && memberDiscountOpt.isEmpty
 
     val isPossiblyMissingComplimentaryTicket = !isFree && !complimentaryTickets.exists(_.free)
+
+    val ticketsEndingSaleBeforeEvent =
+      allTickets.filter(!_.isGuestList).groupBy(t => new Duration(t.sales_end, eventTimes.start).toPeriod().normalizedStandard(YearMonthDayHours)).filterKeys(_.standardDuration > 2.hours)
   }
 
   case class DiscountBenefitTicketing(generalRelease: EBTicketClass, member: EBTicketClass) {
@@ -233,12 +242,6 @@ object Eventbrite {
       else if(isLimitedAvailability) Some("http://schema.org/LimitedAvailability")
       else Some("http://schema.org/InStock")
     }
-
-    val venueDescription = List(
-      venue.name,
-      venue.address.flatMap(_.city),
-      venue.address.flatMap(_.postal_code)
-    ).flatten.mkString(", ")
 
     val statusText: Option[String] = {
       if (isPastEvent) Some("Past event")

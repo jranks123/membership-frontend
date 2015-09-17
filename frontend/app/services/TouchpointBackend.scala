@@ -46,7 +46,7 @@ object TouchpointBackend {
 
     val zuoraSoapClient = new soap.Client(backend.zuora, backend.zuoraMetrics("zuora-soap-client"), Akka.system())
     val zuoraRestClient = new rest.Client(backendConfig, backend.zuoraMetrics("zuora-rest-client"))
-    val subscriptionService = new SubscriptionService(???, zuoraSoapClient, zuoraRestClient, backend.zuoraMetrics("zuora-rest-client"))
+    val subscriptionService = new SubscriptionService(zuoraSoapClient, zuoraRestClient, backend.zuoraMetrics("zuora-rest-client"))
     val memberRepository = new FrontendMemberRepository(backend.salesforce)
 
     TouchpointBackend(memberRepository, stripeService, zuoraSoapClient, zuoraRestClient, subscriptionService)
