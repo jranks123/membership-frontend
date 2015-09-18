@@ -196,7 +196,7 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
       features <- featuresF
       usageCount <- usageCountF
     } yield {
-      val hasComplimentaryTickets = features.exists(_.code == FreeEventTickets.zuoraCode)
+      val hasComplimentaryTickets = features.exists(_.featureCode == FreeEventTickets.zuoraCode)
       if (!hasComplimentaryTickets) None else Some(usageCount)
     }
   }
@@ -339,7 +339,7 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
       val features = ratePlanOpt.toSeq.flatMap(_.subscriptionProductFeatures)
       logger.debug(
         s"Checking product features for for subscription ${subscription.subscriptionNumber}." ++
-          s" Current product ${ratePlanOpt.map(_.productName)}, features: ${features.map(_.code)}")
+          s" Current product ${ratePlanOpt.map(_.productName)}, features: ${features.map(_.featureCode)}")
       features
     }
 
