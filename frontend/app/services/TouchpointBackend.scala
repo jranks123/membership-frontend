@@ -6,10 +6,12 @@ import com.gu.membership.salesforce.Member.Keys
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.{Stripe, StripeService}
 import com.gu.membership.touchpoint.TouchpointBackendConfig
+import com.gu.membership.zuora.soap.ClientWithFeatureSupplier
 import com.gu.membership.zuora.{rest, soap}
 import com.gu.monitoring.{ServiceMetrics, StatusMetrics}
 import com.netaporter.uri.dsl._
 import configuration.Config
+import model.FeatureChoice
 import monitoring.TouchpointBackendMetrics
 import play.api.libs.json.Json
 import play.libs.Akka
@@ -41,10 +43,9 @@ object TouchpointBackend {
       val service = "Stripe"
     })
 
-    val backendConfig = backend.zuora.copy(
-      url = backend.zuoraRestUrl(Config.config))
+    val backendConfig = backend.zuora.copy(url = backend.zuoraRestUrl(Config.config))
 
-    val zuoraSoapClient = new soap.Client(backend.zuora, backend.zuoraMetrics("zuora-soap-client"), Akka.system())
+    val zuoraSoapClient = new ClientWithFeatureSupplier(FeatureChoice.codes, backendConfig, backend.zuoraMetrics("zuora-soap-client"), Akka.system())
     val zuoraRestClient = new rest.Client(backendConfig, backend.zuoraMetrics("zuora-rest-client"))
     val subscriptionService = new SubscriptionService(zuoraSoapClient, zuoraRestClient, backend.zuoraMetrics("zuora-rest-client"))
     val memberRepository = new FrontendMemberRepository(backend.salesforce)
@@ -64,7 +65,7 @@ object TouchpointBackend {
 
 case class TouchpointBackend(memberRepository: FrontendMemberRepository,
                              stripeService: StripeService,
-                             zuoraSoapClient: soap.Client,
+                             zuoraSoapClient: soap.ClientWithFeatureSupplier,
                              zuoraRestClient: rest.Client,
                              subscriptionService: SubscriptionService) extends ActivityTracking {
 
