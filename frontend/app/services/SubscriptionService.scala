@@ -1,7 +1,7 @@
 package services
 
 import com.github.nscala_time.time.Imports._
-import com.gu.membership.model.{ProductRatePlan => MembershipRatePlan,_}
+import com.gu.membership.model.{ProductRatePlan => MembershipRatePlan, _}
 import com.gu.membership.salesforce.MemberId
 import com.gu.membership.salesforce.Tier._
 import com.gu.membership.stripe.Stripe
@@ -21,6 +21,7 @@ import com.typesafe.scalalogging.LazyLogging
 import forms.MemberForm.JoinForm
 import model.{MembershipSummary, FreeEventTickets, FeatureChoice}
 import org.joda.time.DateTime
+import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -81,8 +82,8 @@ object SubscriptionService {
 }
 
 class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
-			  val zuoraRestClient: rest.Client,
-			  val metrics: ServiceMetrics) extends LazyLogging {
+                          val zuoraRestClient: rest.Client,
+                          val metrics: ServiceMetrics) extends LazyLogging {
 
   import SubscriptionService._
   val membershipProductType = "Membership"
@@ -110,8 +111,10 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
       zuoraRatePlan <- productRatePlan match {
         case FriendTierPlan | StaffPlan => product.activeRatePlans.headOption
         case paidTierPlan: PaidTierPlan =>
-	  val charge = rest.ProductRatePlanCharge(productRatePlanChargeModel, Some(paidTierPlan.billingPeriod))
-          product.activeRatePlans.find(_.productRatePlanCharges.contains(charge))
+          product.activeRatePlans.find(_.productRatePlanCharges.exists {
+            case rest.ProductRatePlanCharge(_, productRatePlanChargeModel, Some(paidTierPlan.billingPeriod)) => true
+            case _ => false
+          })
       }
     } yield zuoraRatePlan.id
 
@@ -190,8 +193,8 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
     val startDate = DateTimeHelpers.formatDateTime(subscription.termStartDate)
 
     val usageCountF = zuoraSoapClient.query[Usage](AndFilter(("StartDateTime", startDate),
-							     ("SubscriptionNumber", subscription.subscriptionNumber),
-							     ("UOM", unitOfMeasure))).map(_.size)
+      ("SubscriptionNumber", subscription.subscriptionNumber),
+      ("UOM", unitOfMeasure))).map(_.size)
     for {
       features <- featuresF
       usageCount <- usageCountF
@@ -218,9 +221,9 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
       account = subscribe.Account.stripe(memberId, customerOpt.isDefined),
       paymentMethodOpt = customerOpt.map(subscribe.CreditCardReferenceTransaction),
       ratePlanId = productRatePlanIds(joinData.plan),
-      firstName=joinData.name.first,
-      lastName=joinData.name.last,
-      address=joinData.deliveryAddress,
+      firstName = joinData.name.first,
+      lastName = joinData.name.last,
+      address = joinData.deliveryAddress,
       casIdOpt = casId,
       paymentDelay = paymentDelay,
       ipAddressOpt = None,
@@ -251,12 +254,12 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
       subscriptionDetails <- subscriptionDetailsF
 
     } yield {
-      assert(result.invoiceItems.nonEmpty, "Subscription with delayed payment returning zero invoice items in SubscriptionDetailsViaAmend call")
-      val firstPreviewInvoice = result.invoiceItems.sortBy(_.serviceStartDate).head
+        assert(result.invoiceItems.nonEmpty, "Subscription with delayed payment returning zero invoice items in SubscriptionDetailsViaAmend call")
+        val firstPreviewInvoice = result.invoiceItems.sortBy(_.serviceStartDate).head
 
-      MembershipSummary(latestSubscription.termStartDate, firstPreviewInvoice.serviceEndDate, None,
-	subscriptionDetails.planAmount, firstPreviewInvoice.price, firstPreviewInvoice.serviceStartDate, firstPreviewInvoice.renewalDate )
-    }
+        MembershipSummary(latestSubscription.termStartDate, firstPreviewInvoice.serviceEndDate, None,
+          subscriptionDetails.planAmount, firstPreviewInvoice.price, firstPreviewInvoice.serviceStartDate, firstPreviewInvoice.renewalDate)
+      }
 
     def getSummaryViaInvoice(memberId: MemberId) = for (paymentSummary <- getPaymentSummary(memberId)) yield {
       MembershipSummary(paymentSummary.current.serviceStartDate, paymentSummary.current.serviceEndDate,
@@ -334,4 +337,47 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
 
   def getSubscriptionsByCasId(casId: String): Future[Seq[Subscription]] =
     zuoraSoapClient.query[Subscription](SimpleFilter("CASSubscriberID__c", casId))
+
+  val productRatePlanCharges = new FutureSupplier[Map[MembershipRatePlan, String]](
+    for {
+      membershipProductCatalog <- membershipProducts
+    } yield productRatePlanTiers.map(plan => plan -> productRatePlanChargeIdFromCatalog(plan, membershipProductCatalog)).toMap
+  )
+
+  val productRatePlanCharge = productRatePlanCharges.get()
+
+  val ratePlanChargeTier: Future[Seq[RatePlanChargeTier]] = (for {
+    prpc <- productRatePlanCharge
+    prpct <- Future.sequence {prpc.values.map(getProductRatePlanChargeTier)}
+  } yield {
+      Logger.info(s"tiers.flatten.toSeq : ${prpct.flatten.toSeq}")
+      prpct.flatten.toSeq
+    }).recover { case e: Throwable => logger.error(s"Error while calling ratePlanChargeTier"); throw e }
+
+  protected def productRatePlanChargeIdFromCatalog(productRatePlan: MembershipRatePlan, products: Seq[rest.Product]): String = {
+    val zuoraRatePlanChargeId = for {
+      product <- products.find(_.`Tier__c`.contains(productRatePlan.salesforceTier))
+      zuoraRatePlan <- productRatePlan match {
+        case FriendTierPlan | StaffPlan => product.activeRatePlans.headOption
+        case paidTierPlan: PaidTierPlan =>
+          product.activeRatePlans.find(_.productRatePlanCharges.exists {
+            case rest.ProductRatePlanCharge(_, productRatePlanChargeModel, Some(paidTierPlan.billingPeriod)) => true
+            case _ => false
+          })
+      }
+      productRatePlanCharge <- zuoraRatePlan.productRatePlanCharges.headOption
+    } yield {Logger.info(s"productRatePlanCharge.id: ${productRatePlanCharge.id}"); productRatePlanCharge.id}
+
+    zuoraRatePlanChargeId.getOrElse(throw new scala.RuntimeException(s"Rate Plan Charge Id could not be found for $productRatePlan"))
+  }
+
+  def getProductRatePlanChargeTier(productRatePlanChargeId: String): Future[Seq[RatePlanChargeTier]] = {
+    Logger.info(s"Getting ProductRatePlanChargeTier using the SOAP Call for : $productRatePlanChargeId")
+    zuoraSoapClient.query[RatePlanChargeTier](SimpleFilter("ProductRatePlanChargeId", productRatePlanChargeId))
+      .recover { case e: Throwable =>
+      logger.error(s"Error while calling getRatePlanChargeTier with productRatePlanChargeId $productRatePlanChargeId", e.getMessage)
+      Seq()
+    }
+  }
 }
+
