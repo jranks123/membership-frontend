@@ -1,19 +1,17 @@
-@()
+@import model.TierPricing
+@(pricing: TierPricing)
 
-@import com.gu.membership.salesforce.Tier
-@import com.gu.membership.salesforce.Tier.{Partner, Supporter}
 @import model.Benefits
-@import model.Benefits.BenefitItem
 
-@comparisonHeader(tier: Tier) = {
+@comparisonHeader(benefits: Benefits) = {
     <div class="comparison-table__tier">
-        <div class="comparison-table__tier__name tone-border-@tier.name.toLowerCase">
-        @fragments.tier.tierTrail(tier, showCaption = false)
+        <div class="comparison-table__tier__name tone-border-@benefits.tier.name.toLowerCase">
+        @fragments.tier.tierTrail(benefits, showCaption = false)
         </div>
     </div>
 }
 
-@comparisonDetails(benefits: Seq[BenefitItem]) = {
+@comparisonDetails(benefits: Seq[Benefits.Item]) = {
     <div class="comparison-table__description">
         <div class="comparison-table__description__inner">
             <ul class="o-bulleted-list">
@@ -38,21 +36,21 @@
     </div>
 }
 
-@comparisonPricing(tier: Tier) = {
+@comparisonPricing(benefits: Benefits) = {
     <div class="comparison-table__trail">
         <div class="comparison-table__trail__inner">
             <div class="comparison-table__trail__pricing">
-            @fragments.pricing.priceInfo(tier, canFlex=false)
+            @fragments.pricing.priceInfo(benefits, canFlex=false, isReversible=false)
             </div>
             <div class="comparison-table__trail__action">
-                <a class="action action--snap u-no-bottom-margin qa-comparison-@tier.toString.toLowerCase"
-                href="@routes.Joiner.enterDetails(tier)"
+                <a class="action action--snap u-no-bottom-margin qa-comparison-@benefits.tier.toString.toLowerCase"
+                href="@routes.Joiner.enterDetails(benefits.tier)"
                 data-metric-trigger="click"
                 data-metric-category="join"
-                data-metric-action="@tier.toString.toLowerCase"
+                data-metric-action="@benefits.tier.toString.toLowerCase"
                 >
                     <span class="action__label">
-                        Become a @tier
+                        Become a @benefits.tier
                     </span>
                 </a>
             </div>
@@ -62,8 +60,8 @@
 
 <div class="comparison-table">
     <div class="comparison-table__header">
-        @comparisonHeader(Supporter)
-        @comparisonHeader(Partner)
+        @comparisonHeader(pricing.supporterBenefits)
+        @comparisonHeader(pricing.partnerBenefits)
     </div>
     <div class="comparison-table__body">
         <div class="comparison-table__row">
@@ -78,10 +76,10 @@
         </div>
     </div>
     <div class="comparison-table__footer">
-        @comparisonPricing(Supporter)
-        @comparisonPricing(Partner)
+        @comparisonPricing(pricing.supporterBenefits)
+        @comparisonPricing(pricing.partnerBenefits)
     </div>
     <div class="comparison-table__extra">
-    @fragments.tier.friendTeaser()
-    </div>
+    @fragments.tier.friendTeaser(pricing)
+</div>
 </div>

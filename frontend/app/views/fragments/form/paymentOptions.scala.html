@@ -1,6 +1,4 @@
-@(tier: com.gu.membership.salesforce.Tier)
-
-@import model.Benefits
+@(benefits: model.Benefits)
 
 <fieldset class="fieldset js-payment-options-container">
 
@@ -14,7 +12,7 @@
         <div class="form-field">
 
             <label class="label" for="annual">
-                @Benefits.details(tier).pricing.fold{
+                @benefits.pricing.fold{
                 }{ pricing =>
                     <input type="radio"
                            class="is-hidden"
@@ -39,7 +37,7 @@
             </label>
 
             <label class="label" for="monthly">
-                @Benefits.details(tier).pricing.fold{
+                @benefits.pricing.fold{
                 }{ pricing =>
                     <input type="radio"
                            class="is-hidden"

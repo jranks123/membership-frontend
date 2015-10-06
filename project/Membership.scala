@@ -48,8 +48,9 @@ trait Membership {
 
 object Membership extends Build with Membership {
   val frontend = app("frontend")
-                .settings(libraryDependencies ++= frontendDependencies)
-                .settings(addCommandAlias("devrun", "run -Dconfig.resource=dev.conf 9100"): _*)
+                  .settings(libraryDependencies ++= frontendDependencies)
+                  .settings(libraryDependencies ~= { _.map(_.exclude("org.slf4j", "slf4j-simple")) })
+                  .settings(addCommandAlias("devrun", "run -Dconfig.resource=dev.conf 9100"): _*)
 
   val root = Project("root", base=file(".")).aggregate(frontend)
 }
