@@ -1,8 +1,7 @@
 package model
 
-import com.gu.membership.model.PaidTierPlan
 import com.gu.membership.salesforce.Tier._
-import com.gu.membership.zuora.rest.{Response, ProductCatalog}
+import com.gu.membership.zuora.rest.ProductCatalog
 import com.gu.membership.zuora.rest.Readers._
 import org.specs2.mutable.Specification
 import services.SubscriptionService.membershipProductType
@@ -17,7 +16,7 @@ class TierPricingTest extends Specification {
 
   "TicketPricing" should {
     "excludes expired rate-plans" in {
-      val tierPricing = fromResource("model/zuora/json/product-catalog-expired-patron.json")
+      val tierPricing = fromResource("model/zuora/json/product-catalog-expired-partner.json")
       tierPricing.byTier mustEqual Left(Map(
         Partner -> List("Cannot find a RatePlanCharge (annual: false)")
       ))
