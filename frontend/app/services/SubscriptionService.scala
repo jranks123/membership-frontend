@@ -109,7 +109,8 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
     PaidTierPlan(Partner, annual = true), PaidTierPlan(Partner, annual = false),
     PaidTierPlan(Patron, annual = true), PaidTierPlan(Patron, annual = false))
 
-  def membershipProducts = zuoraRestClient.productCatalogSupplier.get().map(_.productsOfType(membershipProductType))
+  val productCatalogSupplier = zuoraRestClient.productCatalogSupplier
+  def membershipProducts = productCatalogSupplier.get().map(_.productsOfType(membershipProductType))
   def tierPricing = membershipProducts.map(TierPricing)
 
   val productRatePlanIdSupplier = new FutureSupplier[Map[TierPlan, String]](

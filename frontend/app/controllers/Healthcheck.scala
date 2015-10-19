@@ -1,14 +1,13 @@
 
 package controllers
 
+import com.github.nscala_time.time.Imports._
 import com.gu.membership.salesforce.Tier
 import com.gu.monitoring.CloudWatchHealth
-import model.{Pricing, TierPricing}
+import model.{TierPricing, Pricing}
 import play.api.Logger.warn
 import play.api.mvc.{Action, Controller}
-import services.{GuardianLiveEventService, TouchpointBackend}
-import com.github.nscala_time.time.Imports._
-import Function.const
+import services.{SubscriptionService, GuardianLiveEventService, TouchpointBackend}
 import scala.util.Success
 
 trait Test {
@@ -21,20 +20,22 @@ class BoolTest(name: String, exec: () => Boolean) extends Test {
   override def ok = exec()
 }
 
-class TierPricingTest extends Test {
-
+class TierPricingTest(subscriptionService: SubscriptionService) extends Test {
   def getTierPricing: Option[Either[Map[Tier, List[String]], Map[Tier, Pricing]]] =
-    TouchpointBackend.Normal.subscriptionService.tierPricing.value.flatMap(_.toOption.map(_.byTier))
-
-  override def ok: Boolean = getTierPricing.exists(_.isRight)
-
-  override def messages: Seq[String] =
-    getTierPricing.fold[Seq[String]](Nil)(eReport =>
-      eReport.left.toSeq.flatMap { report => report.collect { case (tier, errors) =>
-          s"Cannot find some price info for tier $tier. Errors: ${errors.mkString(", ")}"
-        }
+    subscriptionService.productCatalogSupplier.get().value.collect {
+      case Success(catalog) => {
+        val tp = TierPricing(catalog).byTier
+        println("got a tp..", tp)
+        tp
       }
-    )
+    }
+
+  override def ok = getTierPricing.exists(_.isRight)
+  override def messages = getTierPricing.fold[Seq[String]](Nil)(eReport =>
+    eReport.left.toSeq.flatMap { report => report.collect { case (tier, errors) =>
+      s"Incomplete pricing data for tier $tier. Errors: ${errors.mkString(", ")}; health check will fail"
+    }
+  })
 }
 
 object Healthcheck extends Controller {
@@ -46,7 +47,7 @@ object Healthcheck extends Controller {
     new BoolTest("CloudWatch", () => CloudWatchHealth.hasPushedMetricSuccessfully),
     new BoolTest("ZuoraPing", () => zuoraSoapClient.lastPingTimeWithin(2.minutes)),
     new BoolTest("ZuoraProductRatePlans", () => subscriptionService.productRatePlanIdSupplier.get().value.exists(_.isSuccess)),
-    new TierPricingTest
+    new TierPricingTest(subscriptionService)
   )
 
   def healthcheck() = Action {
@@ -55,7 +56,7 @@ object Healthcheck extends Controller {
       if (failures.isEmpty) {
         Ok("OK")
       } else {
-        failures.foreach(_.messages.foreach(warn))
+        failures.flatMap(_.messages).foreach(msg => warn(msg))
         ServiceUnavailable("Service Unavailable")
       }
     }

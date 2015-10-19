@@ -10,13 +10,13 @@ import Function.const
 case class TierPricing(catalog: rest.ProductCatalog) {
   type ErrorReport = Map[Tier, List[String]]
 
-  val patronBenefits = benefits(Patron)
-  val partnerBenefits = benefits(Partner)
-  val supporterBenefits = benefits(Supporter)
-  val friendBenefits = benefits(Friend)
-  val staffBenefits = benefits(Staff)
+  lazy val patronBenefits = benefits(Patron)
+  lazy val partnerBenefits = benefits(Partner)
+  lazy val supporterBenefits = benefits(Supporter)
+  lazy val friendBenefits = benefits(Friend)
+  lazy val staffBenefits = benefits(Staff)
 
-  lazy val byTier: Either[ErrorReport, Map[Tier, Pricing]] = {
+  def byTier: Either[ErrorReport, Map[Tier, Pricing]] = {
     val ePricingByTier = Tier.allPublic.filter(_.isPaid).map { t => t -> forTier(t) }.toMap
 
     if (ePricingByTier.exists(_._2.isLeft))
@@ -39,12 +39,16 @@ case class TierPricing(catalog: rest.ProductCatalog) {
     }
   }
 
-  private def findPrice(plan: PaidTierPlan, currency: Currency): Either[String, Float] =
-    (for {
+  private def findPrice(plan: PaidTierPlan, currency: Currency): Either[String, Float] = {
+    val out = (for {
       ratePlan <- catalog.ratePlanByTierPlan(plan)
       ratePlanCharge <- ratePlan.findCharge(plan.billingPeriod, rest.FlatFee)
     } yield ratePlanCharge.pricingSummaryParsed)
-      .toRight(s"Cannot find a RatePlanCharge (annual: ${plan.annual})")
+
+    //println((plan.tier, plan.billingPeriod, out))
+
+    out.toRight(s"Cannot find a RatePlanCharge (billingPeriod: ${plan.billingPeriod})")
       .right.flatMap(summary => summary.getPrice(currency)
       .toRight(s"Cannot find a $currency price"))
+  }
 }
