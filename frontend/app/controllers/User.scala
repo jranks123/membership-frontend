@@ -51,16 +51,16 @@ trait User extends Controller {
       cardDetails <- futureCardDetails
       subscriptionStatus <- request.touchpointBackend.subscriptionService.getSubscriptionStatus(request.member)
       subscriptionDetails <- request.touchpointBackend.subscriptionService.getSubscriptionDetails(subscriptionStatus.currentVersion)
-      membershipSummary <- request.touchpointBackend.subscriptionService.getMembershipSubscriptionSummary(request.member)
+      membershipSummary <- request.touchpointBackend.subscriptionService.getSubscriptionSummary(request.member)
     } yield
       Json.obj(
         "optIn" -> !subscriptionStatus.cancelled,
         "subscription" -> (cardDetails ++ Json.obj(
           "start" -> membershipSummary.startDate,
           "end" -> endDate(subscriptionDetails),
-          "nextPaymentPrice" -> membershipSummary.nextPaymentPrice * 100,
-          "nextPaymentDate" -> membershipSummary.nextPaymentDate,
-          "renewalDate" -> membershipSummary.renewalDate,
+          "nextPaymentPrice" -> membershipSummary.invoices.head.amount * 100,
+          "nextPaymentDate" -> membershipSummary.invoices.head.date,
+          "renewalDate" -> membershipSummary.invoices(1).date, //temporary, promise!
           "cancelledAt" -> subscriptionStatus.futureVersionIdOpt.isDefined,
           "plan" -> Json.obj(
             "name" -> subscriptionDetails.planName,

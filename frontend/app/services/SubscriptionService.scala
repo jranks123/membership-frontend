@@ -17,9 +17,11 @@ import com.gu.membership.zuora.soap.models._
 
 import com.gu.membership.zuora.soap.Readers._
 import com.gu.monitoring.ServiceMetrics
+import com.gu.services.PreviewInvoices
 import com.typesafe.scalalogging.LazyLogging
 import forms.MemberForm.JoinForm
-import model.{TierPricing, MembershipSummary, FreeEventTickets, FeatureChoice}
+import model.SubscriptionSummary.Invoice
+import model._
 import org.joda.time.DateTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -101,6 +103,7 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
 			                    val metrics: ServiceMetrics) extends LazyLogging {
 
   import SubscriptionService._
+  def previewInvoices = new PreviewInvoices(zuoraSoapClient)
 
   val productRatePlanTiers: List[TierPlan] = List(
     FriendTierPlan,
@@ -238,6 +241,10 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
     } yield PaymentSummary(filteredInvoices)
   }
 
+  /**
+   * @deprecated To be split into getSubscriptionSummary and some other as yet unnamed method
+   * @param memberId The member to get details for
+   */
   def getMembershipSubscriptionSummary(memberId: MemberId): Future[MembershipSummary] = {
     val latestSubF = for {
       (_, subscription) <- accountWithLatestMembershipSubscription(memberId)
@@ -276,6 +283,28 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
       userInvoiced <- hasUserBeenInvoiced(memberId)
       summary <- if (userInvoiced) getSummaryViaInvoice(memberId) else getSummaryViaSubscriptionAmend(memberId)
     } yield summary
+  }
+
+  /**
+   * @param memberId The member to get details for
+   */
+  def getSubscriptionSummary(memberId: MemberId): Future[SubscriptionSummary] = {
+
+    val latestSubFuture = for {
+      (_, subscription) <- accountWithLatestMembershipSubscription(memberId)
+      subscriptionVersions <- subscriptionVersions(subscription.subscriptionNumber)
+    } yield subscriptionVersions.maxBy(_.version)
+
+    for {
+      latestSubscription <- latestSubFuture
+      subscriptionDetailsF = getSubscriptionDetails(latestSubscription)
+      invoices <- previewInvoices(latestSubscription.name, 3)
+      subscriptionDetails <- subscriptionDetailsF
+    } yield {
+      assert(invoices.length >= 2, "2 or more invoices are required")
+      val invs = invoices.map {i => Invoice(i.serviceStartDate, i.price)}.sortBy(_.date)
+      SubscriptionSummary(latestSubscription.termStartDate, invs, subscriptionDetails.planAmount )
+    }
   }
 
   def cancelSubscription(memberId: MemberId, instant: Boolean): Future[AmendResult] = {
