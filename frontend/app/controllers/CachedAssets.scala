@@ -5,7 +5,7 @@ import play.api.mvc.{Action, Controller}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object CachedAssets extends Controller {
+class CachedAssets extends Controller {
 
   def at(path: String, file: String, aggressiveCaching: Boolean = false) = Action.async { request =>
     controllers.Assets.at(path, file, aggressiveCaching).apply(request).recover {

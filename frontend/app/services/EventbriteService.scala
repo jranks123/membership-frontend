@@ -103,7 +103,7 @@ trait EventbriteService extends WebServiceHelper[EBObject, EBError] {
 
 abstract class LiveService extends EventbriteService {
   val gridService = GridService(Config.gridConfig.url)
-  val contentApiService = GuardianContentService
+  lazy val contentApiService = GuardianContentService
 
   def gridImageFor(event: EBEvent) =
     event.mainImageUrl.fold[Future[Option[GridImage]]](Future.successful(None))(gridService.getRequestedCrop)
@@ -169,7 +169,7 @@ object MasterclassEventService extends EventbriteService {
 
   val wsMetrics = new EventbriteMetrics("Masterclasses")
 
-  val contentApiService = GuardianContentService
+  lazy val contentApiService = GuardianContentService
 
   override def events: Seq[RichEvent] = super.events.filter(MasterclassesWithAvailableMemberDiscounts)
 

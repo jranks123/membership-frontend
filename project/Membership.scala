@@ -1,5 +1,6 @@
 import Dependencies._
 import PlayArtifact._
+import play.routes.compiler.InjectedRoutesGenerator
 import play.sbt.PlayScala
 import sbt.Keys._
 import sbt._
@@ -28,7 +29,7 @@ trait Membership {
     organization := "com.gu",
     version := appVersion,
     scalaVersion := "2.11.6",
-    resolvers ++= Seq(
+      resolvers ++= Seq(
       "Guardian Github Releases" at "https://guardian.github.io/maven/repo-releases",
       "Guardian Github Snapshots" at "http://guardian.github.com/maven/repo-snapshots",
       "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases",
@@ -44,6 +45,7 @@ trait Membership {
 
   def app(name: String) = lib(name).settings(playArtifactDistSettings: _*).settings(magentaPackageName := name)
     .settings(play.sbt.routes.RoutesKeys.routesImport ++= Seq("controllers.TierBinder._","com.gu.membership.salesforce.Tier"))
+    .settings(play.sbt.routes.RoutesKeys.routesGenerator := InjectedRoutesGenerator)
 }
 
 object Membership extends Build with Membership {
@@ -52,4 +54,5 @@ object Membership extends Build with Membership {
                 .settings(addCommandAlias("devrun", "run -Dconfig.resource=dev.conf 9100"): _*)
 
   val root = Project("root", base=file(".")).aggregate(frontend)
+
 }

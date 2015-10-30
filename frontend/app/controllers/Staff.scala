@@ -3,7 +3,7 @@ package controllers
 import play.api.mvc.Controller
 import services.{LocalEventService, GuardianLiveEventService, MasterclassEventService}
 
-trait Staff extends Controller {
+class Staff extends Controller {
   val guLiveEvents = GuardianLiveEventService
   val localEvents = LocalEventService
   val masterclassEvents = MasterclassEventService

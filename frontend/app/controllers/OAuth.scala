@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
-object OAuth extends Controller with OAuthActions {
+class OAuth extends Controller with OAuthActions {
   val ANTI_FORGERY_KEY = "antiForgeryToken"
 
   def login = NoCacheAction { request =>

@@ -25,12 +25,12 @@ import utils.CampaignCode.extractCampaignCode
 
 import scala.concurrent.Future
 
-trait Event extends Controller with ActivityTracking {
+class Event extends Controller with ActivityTracking {
 
-  val guLiveEvents: EventbriteService
-  val localEvents: EventbriteService
-  val masterclassEvents: EventbriteService
-  val memberService: MemberService
+  val guLiveEvents = GuardianLiveEventService
+  val localEvents = LocalEventService
+  val masterclassEvents = MasterclassEventService
+  val memberService = MemberService
 
   private def recordBuyIntention(eventId: String) = new ActionBuilder[Request] {
     override def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]): Future[Result] = {
@@ -202,8 +202,4 @@ trait Event extends Controller with ActivityTracking {
 }
 
 object Event extends Event {
-  val guLiveEvents = GuardianLiveEventService
-  val localEvents = LocalEventService
-  val masterclassEvents = MasterclassEventService
-  val memberService = MemberService
 }

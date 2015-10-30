@@ -4,8 +4,8 @@ import model.{ResponsiveImageGenerator, ResponsiveImageGroup}
 import play.api.mvc.Controller
 import services.{GuardianLiveEventService, EventbriteService}
 
-trait PatternLibrary extends Controller {
-  val guLiveEvents: EventbriteService
+class PatternLibrary extends Controller {
+  val guLiveEvents = GuardianLiveEventService
 
   val pageImages = Seq(
     ResponsiveImageGroup(
@@ -36,5 +36,4 @@ trait PatternLibrary extends Controller {
 }
 
 object PatternLibrary extends PatternLibrary {
-  val guLiveEvents = GuardianLiveEventService
 }

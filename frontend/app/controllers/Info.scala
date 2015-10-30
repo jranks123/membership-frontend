@@ -8,7 +8,7 @@ import forms.MemberForm._
 import model._
 import services.{GuardianContentService, AuthenticationService, EmailService}
 
-trait Info extends Controller {
+class Info extends Controller {
 
   def supporter = CachedAction { implicit request =>
 

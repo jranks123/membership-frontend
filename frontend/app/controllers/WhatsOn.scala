@@ -10,11 +10,11 @@ import play.api.mvc.Controller
 import services._
 import tracking.ActivityTracking
 
-trait WhatsOn extends Controller with ActivityTracking {
+class WhatsOn extends Controller with ActivityTracking {
 
-  val guLiveEvents: EventbriteService
-  val localEvents: EventbriteService
-  val masterclassEvents: EventbriteService
+  val guLiveEvents = GuardianLiveEventService
+  val localEvents = LocalEventService
+  val masterclassEvents = MasterclassEventService
 
   // This can be deleted once all these events have completed
   val hiddenEvents = Set(
@@ -109,7 +109,5 @@ trait WhatsOn extends Controller with ActivityTracking {
 }
 
 object WhatsOn extends WhatsOn {
-  val guLiveEvents = GuardianLiveEventService
-  val localEvents = LocalEventService
-  val masterclassEvents = MasterclassEventService
+
 }

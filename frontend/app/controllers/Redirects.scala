@@ -2,7 +2,7 @@ package controllers
 
 import play.api.mvc.Controller
 
-trait Redirects extends Controller {
+class Redirects extends Controller {
 
   def homepageRedirect = CachedAction(MovedPermanently("/"))
 

@@ -22,12 +22,15 @@ object Dependencies {
   val bCrypt = "com.github.t3hnar" %% "scala-bcrypt" % "2.4"
   val s3 =  "com.amazonaws" % "aws-java-sdk-s3" % awsClientVersion
   val scalaTest =  "org.scalatestplus" %% "play" % "1.4.0-M4" % "test"
+  val macWireMacros = "com.softwaremill.macwire" %% "macros" % "2.1.0" % "provided"
+  val macWireUtil = "com.softwaremill.macwire" %% "util" % "2.1.0"
+  val macwireProxy = "com.softwaremill.macwire" %% "proxy" % "2.1.0"
 
   //projects
 
   val frontendDependencies = Seq(identityCookie, identityPlayAuth, playGoogleAuth, identityTestUsers, scalaUri, membershipCommon,
     contentAPI, playWS, playCache, playFilters,sentryRavenLogback, awsSimpleEmail, snowPlow, bCrypt, s3,
-    PlayImport.specs2 % "test",
+    PlayImport.specs2 % "test", macWireMacros, macWireUtil, macwireProxy,
     scalaTest)
 
 }

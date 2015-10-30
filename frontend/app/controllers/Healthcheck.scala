@@ -1,4 +1,3 @@
-
 package controllers
 
 import com.github.nscala_time.time.Imports._
@@ -34,9 +33,9 @@ class TierPricingTest(subscriptionService: SubscriptionService) extends Test {
   })
 }
 
-object Healthcheck extends Controller {
-  val zuoraSoapClient = TouchpointBackend.Normal.zuoraSoapClient
-  val subscriptionService = TouchpointBackend.Normal.subscriptionService
+class Healthcheck extends Controller {
+  lazy val zuoraSoapClient = TouchpointBackend.Normal.zuoraSoapClient
+  lazy val subscriptionService = TouchpointBackend.Normal.subscriptionService
 
   def tests = Seq(
     new BoolTest("Events", () => GuardianLiveEventService.events.nonEmpty),

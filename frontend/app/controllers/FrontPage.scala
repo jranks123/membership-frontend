@@ -5,7 +5,7 @@ import model._
 import play.api.mvc.Controller
 import services.{EventbriteService, GuardianLiveEventService, LocalEventService, MasterclassEventService}
 
-trait FrontPage extends Controller {
+trait FrontPageT extends Controller {
 
   val liveEvents: EventbriteService
   val localEvents: EventbriteService
@@ -184,7 +184,7 @@ trait FrontPage extends Controller {
   }
 }
 
-object FrontPage extends FrontPage {
+class FrontPage extends FrontPageT {
   val liveEvents = GuardianLiveEventService
   val localEvents = LocalEventService
   val masterclassEvents = MasterclassEventService

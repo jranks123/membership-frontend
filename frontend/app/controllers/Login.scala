@@ -8,7 +8,7 @@ import play.api.data.Forms._
 import services.AuthenticationService
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-object Login extends Controller {
+class Login extends Controller {
 
   /*
    *   Interstitial sign in page =========================================

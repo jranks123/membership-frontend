@@ -6,11 +6,8 @@ import play.twirl.api.Html
 import utils.TestUsers.testUsers
 import actions.Functions._
 
-object Testing extends Controller with LazyLogging {
+class Testing extends Controller with LazyLogging {
 
-  val AnalyticsCookieName = "ANALYTICS_OFF_KEY"
-
-  val analyticsOffCookie = Cookie(AnalyticsCookieName, "true", httpOnly = false)
 
   /**
    * Make sure to use cannonical @guardian.co.uk for addresses
@@ -29,11 +26,18 @@ object Testing extends Controller with LazyLogging {
   def testUser = AuthorisedTester { implicit request =>
     val testUserString = testUsers.generate()
     logger.info(s"Generated test user string $testUserString for ${request.user.email}")
-    Ok(views.html.testing.testUsers(testUserString)).withCookies(analyticsOffCookie)
+    Ok(views.html.testing.testUsers(testUserString)).withCookies(Testing.analyticsOffCookie)
   }
 
   def analyticsOff = CachedAction {
-    Ok(s"${analyticsOffCookie.name} cookie dropped").withCookies(analyticsOffCookie)
+    Ok(s"${Testing.analyticsOffCookie.name} cookie dropped").withCookies(Testing.analyticsOffCookie)
   }
+
+}
+
+object Testing {
+  val AnalyticsCookieName = "ANALYTICS_OFF_KEY"
+
+  val analyticsOffCookie = Cookie(AnalyticsCookieName, "true", httpOnly = false)
 
 }

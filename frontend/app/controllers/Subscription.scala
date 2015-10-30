@@ -12,7 +12,7 @@ import services.MemberService
 
 import scala.concurrent.Future
 
-trait Subscription extends Controller {
+class Subscription extends Controller {
   def updateCard() = AjaxPaidMemberAction.async { implicit request =>
     updateForm.bindFromRequest
       .fold(_ => Future.successful(BadRequest), stripeToken =>

@@ -26,16 +26,16 @@ import utils.CampaignCode.extractCampaignCode
 
 import scala.concurrent.Future
 
-trait Joiner extends Controller with ActivityTracking with LazyLogging {
+trait JoinerT extends Controller with ActivityTracking with LazyLogging {
   val JoinReferrer = "join-referrer"
 
-  val contentApiService = GuardianContentService
+  lazy val contentApiService = GuardianContentService
 
   val memberService: MemberService
 
   val subscriberOfferDelayPeriod = 6.months
 
-  val casService = CASService
+  lazy val casService = CASService
 
   val EmailMatchingGuardianAuthenticatedStaffNonMemberAction = AuthenticatedStaffNonMemberAction andThen matchingGuardianEmail()
 
@@ -220,6 +220,8 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
   def thankyouStaff = thankyou(Tier.Partner)
 }
 
-object Joiner extends Joiner {
-  val memberService = MemberService
+class Joiner extends JoinerT {
+  lazy val memberService = MemberService
 }
+
+object Joiner extends Joiner {}

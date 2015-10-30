@@ -177,7 +177,7 @@ trait CancelTier {
   }
 }
 
-trait TierController extends Controller with UpgradeTier with DowngradeTier with CancelTier {
+class TierController extends Controller with UpgradeTier with DowngradeTier with CancelTier {
   def change() = MemberAction { implicit request =>
     val currentTier = request.member.tier
     val availableTiers = Tier.allPublic.filter(_ != currentTier)

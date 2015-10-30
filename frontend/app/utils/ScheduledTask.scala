@@ -19,7 +19,7 @@ trait ScheduledTask[T] {
 
   val name = getClass.getSimpleName
 
-  private implicit val system = Akka.system
+  private implicit lazy val system = Akka.system
   lazy val agent = Agent[T](initialValue)
 
   def refresh(): Future[T]

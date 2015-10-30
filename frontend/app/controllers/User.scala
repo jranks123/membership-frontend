@@ -17,7 +17,7 @@ import utils.GuMemCookie
 
 import scala.concurrent.Future
 
-trait User extends Controller {
+class User extends Controller {
   val standardFormat = ISODateTimeFormat.dateTime.withZoneUTC
   implicit val writesInstant = Writes[Instant] { instant => JsString(instant.toString(standardFormat)) }
 

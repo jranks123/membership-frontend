@@ -3,7 +3,7 @@ package controllers
 import model.FlashMessage
 import play.api.mvc.Controller
 
-object StaffAuth extends Controller {
+class StaffAuth extends Controller {
 
   def unauthorised = GoogleAuthenticatedStaffAction { implicit request =>
     val flashMsgOpt = request.flash.get("error").map(FlashMessage.error)
