@@ -1,11 +1,12 @@
 import com.gu.googleauth
+import com.gu.i18n.CountryGroup
 import com.gu.identity.play.{AuthenticatedIdUser, IdMinimalUser}
 import com.gu.membership.salesforce._
 import com.gu.membership.util.Timing
 import model.MembershipCatalog
 import monitoring.MemberAuthenticationMetrics
 import play.api.mvc.Security.AuthenticatedRequest
-import play.api.mvc.{Cookie, WrappedRequest}
+import play.api.mvc.{Request, Cookie, WrappedRequest}
 import services._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -15,7 +16,7 @@ package object actions {
 
   type GoogleAuthRequest[A] = AuthenticatedRequest[A, googleauth.UserIdentity]
 
-  val countryCodeKey = "country-code"
+  val countryGroupKey = "country-group"
 
   trait TierDetailsProvider {
     def touchpointBackend: TouchpointBackend

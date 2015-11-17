@@ -1,6 +1,7 @@
 package actions
 
 import com.gu.googleauth
+import com.gu.i18n.CountryGroup
 import configuration.Config
 import controllers._
 import play.api.http.HeaderNames._
@@ -19,7 +20,7 @@ import scala.concurrent.Future
 trait CommonActions {
 
   val AddUserInfoToResponse = new ActionBuilder[Request] {
-    def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = {
+    def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) =
       block(request).map { result =>
         (for (user <- AuthenticationService.authenticatedUserFor(request)) yield {
           result.withHeaders(
@@ -28,7 +29,6 @@ trait CommonActions {
         }).getOrElse(result)
       }
     }
-  }
 
   val NoCacheAction = resultModifier(NoCache(_)) andThen AddUserInfoToResponse
 

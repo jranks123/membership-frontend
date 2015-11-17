@@ -1,4 +1,5 @@
 import actions._
+import com.gu.i18n.CountryGroup
 import com.gu.membership.salesforce.{PaidTierMember, Member}
 import com.typesafe.scalalogging.LazyLogging
 import play.api.data.Form
@@ -19,6 +20,13 @@ package object controllers extends CommonActions with LazyLogging{
       case _ => ""
     }
   }
+
+  implicit def countryGroup(implicit request: RequestHeader) =
+    request
+      .getQueryString(countryGroupKey)
+      .orElse(request.session.get(countryGroupKey))
+      .flatMap(CountryGroup.byId)
+      .getOrElse(CountryGroup.UK)
 
   def redirectToUnsupportedBrowserInfo[T: ClassTag](form: Form[T])(implicit req: RequestHeader): Future[Result] = {
     lazy val errors = form.errors.map { e => s"  - ${e.key}: ${e.messages.mkString(", ")}"}.mkString("\n")
