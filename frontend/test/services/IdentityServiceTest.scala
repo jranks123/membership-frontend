@@ -1,6 +1,6 @@
 package services
 
-import com.gu.i18n.{Countries, Address}
+import com.gu.i18n.{Country, Address}
 import com.gu.identity.play.IdMinimalUser
 import com.gu.membership.model.Year
 import com.gu.membership.salesforce.Tier
@@ -36,7 +36,7 @@ class IdentityServiceTest extends Specification with Mockito {
 
       val friendForm = FriendJoinForm(
         NameForm("Joe", "Bloggs"),
-        Address("line one", "line 2", "town", "country", "postcode", Countries.UK),
+        Address("line one", "line 2", "town", "country", "postcode", Country.UK),
         MarketingChoicesForm(Some(false), Some(false)),
         None
       )
@@ -56,8 +56,8 @@ class IdentityServiceTest extends Specification with Mockito {
         Tier.Partner,
         NameForm("Joe", "Bloggs"),
         PaymentForm(Year, "token"),
-        Address("line one", "line 2", "town", "country", "postcode", Countries.UK),
-        Some(Address("line one", "line 2", "town", "country", "postcode", Countries.UK)),
+        Address("line one", "line 2", "town", "country", "postcode", Country.UK),
+        Some(Address("line one", "line 2", "town", "country", "postcode", Country.UK)),
         MarketingChoicesForm(Some(false), Some(false)),
         None,
         None,
@@ -77,8 +77,8 @@ class IdentityServiceTest extends Specification with Mockito {
 
     val identityService = new IdentityService(identityAPI)
     val addressDetails = AddressDetails(
-      Address("line one", "line 2", "town", "country", "postcode", Countries.UK),
-      Some(Address("line one", "line 2", "town", "country", "postcode", Countries.UK))
+      Address("line one", "line 2", "town", "country", "postcode", Country.UK),
+      Some(Address("line one", "line 2", "town", "country", "postcode", Country.UK))
     )
 
     identityService.updateUserFieldsBasedOnUpgrade(user.id, addressDetails, identityRequest)

@@ -1,6 +1,6 @@
 package forms
 
-import com.gu.i18n.{Address, Countries, Country}
+import com.gu.i18n.{CountryGroup, Address, Country}
 import com.gu.membership.model._
 import com.gu.membership.salesforce.PaidTier
 import model.FeatureChoice
@@ -73,10 +73,23 @@ object MemberForm {
       Map(key -> FeatureChoice.setToString(choices))
   }
 
-  private val productFeature = of[Set[FeatureChoice]] as productFeaturesFormatter
+  implicit val countryFormatter: Formatter[Country] = new Formatter[Country] {
+    override def bind(key: String, data: Map[String, String]): Either[Seq[FormError], Country] = {
+      val countryCode = data.get(key)
+      lazy val formError = FormError(key, s"Cannot find a country by country code ${countryCode.getOrElse("")}")
 
-  val countryText = nonEmptyText.verifying(Countries.byCode.contains _)
-    .transform[Country](Countries.byCode.apply, _.alpha2)
+      countryCode
+        .flatMap(CountryGroup.countryByCode)
+        .toRight[Seq[FormError]](Seq(formError))
+    }
+
+    override def unbind(key: String, value: Country): Map[String, String] =
+      Map(key -> value.alpha2)
+  }
+
+  private val productFeature = of[Set[FeatureChoice]] as productFeaturesFormatter
+  private val country = of[Country] as countryFormatter
+
 
   val nonPaidAddressMapping: Mapping[Address] = mapping(
     "lineOne" -> text,
@@ -84,7 +97,7 @@ object MemberForm {
     "town" -> text,
     "countyOrState" -> text,
     "postCode" -> text(maxLength=20),
-    "country" -> countryText
+    "country" -> country
   )(Address.apply)(Address.unapply).verifying(_.valid)
 
   val paidAddressMapping: Mapping[Address] = mapping(
@@ -93,7 +106,7 @@ object MemberForm {
     "town" -> nonEmptyText,
     "countyOrState" -> text,
     "postCode" -> text(maxLength=20),
-    "country" -> countryText
+    "country" -> country
   )(Address.apply)(Address.unapply).verifying(_.valid)
 
   val nameMapping: Mapping[NameForm] = mapping(

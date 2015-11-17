@@ -1,4 +1,4 @@
-@import com.gu.i18n.Countries
+@import com.gu.i18n.{CountryGroup,Country}
 
 @(
     heading: String = "",
@@ -45,7 +45,7 @@
                 class="select js-country"
                 required
                 aria-required="true">
-                @for(country <- Countries.all) {
+                @for(country <- CountryGroup.countries) {
                     <option value="@country.alpha2"@if(userCountry.getOrElse("") == country.name){ selected}>@country.name</option>
                 }
             </select>
@@ -89,8 +89,8 @@
             @fragments.form.errorMessage(s"Please enter your ${heading.toLowerCase()} town")
         </div>
 
-        @countyOrStateSelect(Countries.US.states.toList, "state")
-        @countyOrStateSelect(Countries.Canada.states.toList, "province")
+        @countyOrStateSelect(Country.US.states.toList, "state")
+        @countyOrStateSelect(Country.Canada.states.toList, "province")
 
         <div class="js-county-container">
             <div class="form-field js-county-section">
