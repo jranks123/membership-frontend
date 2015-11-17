@@ -1,6 +1,6 @@
 package views.support
 
-import com.gu.membership.model.{GBP, Currency}
+import com.gu.i18n.{GBP, Currency}
 import model.PaidTierDetails
 import views.support.Prices._
 

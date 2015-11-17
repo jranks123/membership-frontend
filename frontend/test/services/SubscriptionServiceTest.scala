@@ -1,6 +1,7 @@
 package services
 
 import com.github.nscala_time.time.Imports._
+import com.gu.i18n.GBP
 import com.gu.membership.model._
 import com.gu.membership.salesforce.PaidTier
 import com.gu.membership.salesforce.Tier.{Partner, Patron, Supporter}

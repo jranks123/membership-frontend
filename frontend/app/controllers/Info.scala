@@ -1,6 +1,6 @@
 package controllers
 
-import com.gu.membership.model.{Currency, GBP}
+import com.gu.i18n.{Currency, GBP}
 import play.api.mvc.Controller
 import views.support.Asset
 import scala.concurrent.Future

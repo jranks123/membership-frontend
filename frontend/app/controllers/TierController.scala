@@ -2,7 +2,7 @@ package controllers
 
 import actions._
 import com.gu.identity.play.PrivateFields
-import com.gu.membership.model.{Currency, GBP}
+import com.gu.i18n.{Currency, GBP}
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Serializer._

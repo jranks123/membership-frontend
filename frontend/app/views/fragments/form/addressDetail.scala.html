@@ -1,3 +1,5 @@
+@import com.gu.i18n.Countries
+
 @(
     heading: String = "",
     note: String = "",
@@ -10,8 +12,6 @@
     county: Option[String],
     userCountry: Option[String]
 )
-
-@import com.gu.membership.zuora.Countries
 
 @countyOrStateSelect(countyOrStateList: List[String], countyOrStateLabel: String) = {
     <div class="form-field u-h">
@@ -45,7 +45,7 @@
                 class="select js-country"
                 required
                 aria-required="true">
-                @for(country <- Countries.allSorted) {
+                @for(country <- Countries.all) {
                     <option value="@country.alpha2"@if(userCountry.getOrElse("") == country.name){ selected}>@country.name</option>
                 }
             </select>

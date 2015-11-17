@@ -1,5 +1,6 @@
 package model
 
+import com.gu.i18n.{Currency, GBP}
 import com.gu.membership.model._
 import com.gu.membership.zuora.rest.PricingSummary
 

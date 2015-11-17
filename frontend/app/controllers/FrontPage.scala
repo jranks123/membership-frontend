@@ -1,11 +1,11 @@
 package controllers
 
-import com.gu.membership.model.{GBP, Currency}
+import com.gu.i18n.{GBP, Currency}
 import model.RichEvent.EventBrandCollection
 import model._
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Controller
 import services._
-import play.api.libs.concurrent.Execution.Implicits._
 
 trait FrontPage extends Controller {
 

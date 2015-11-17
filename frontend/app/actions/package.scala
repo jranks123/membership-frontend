@@ -3,6 +3,7 @@ import com.gu.identity.play.{AuthenticatedIdUser, IdMinimalUser}
 import com.gu.membership.salesforce._
 import com.gu.membership.util.Timing
 import model.MembershipCatalog
+import monitoring.MemberAuthenticationMetrics
 import play.api.mvc.Security.AuthenticatedRequest
 import play.api.mvc.{Cookie, WrappedRequest}
 import services._
@@ -13,6 +14,8 @@ package object actions {
   type AuthRequest[A] = AuthenticatedRequest[A, AuthenticatedIdUser]
 
   type GoogleAuthRequest[A] = AuthenticatedRequest[A, googleauth.UserIdentity]
+
+  val countryCodeKey = "country-code"
 
   trait TierDetailsProvider {
     def touchpointBackend: TouchpointBackend

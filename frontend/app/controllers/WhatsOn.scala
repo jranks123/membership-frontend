@@ -1,7 +1,7 @@
 package controllers
 
 import com.github.nscala_time.time.Imports._
-import com.gu.membership.model.{Currency, GBP}
+import com.gu.i18n.{Currency, GBP}
 import configuration.CopyConfig
 import model.RichEvent.MasterclassEvent._
 import model.RichEvent._

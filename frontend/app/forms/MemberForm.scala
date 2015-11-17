@@ -1,8 +1,8 @@
 package forms
 
+import com.gu.i18n.{Address, Countries, Country}
 import com.gu.membership.model._
-import com.gu.membership.salesforce.{PaidTier, Tier}
-import com.gu.membership.zuora.{Address, Countries, Country}
+import com.gu.membership.salesforce.PaidTier
 import model.FeatureChoice
 import play.api.data.Forms._
 import play.api.data.format.Formatter
@@ -75,8 +75,8 @@ object MemberForm {
 
   private val productFeature = of[Set[FeatureChoice]] as productFeaturesFormatter
 
-  val countryText = nonEmptyText.verifying(Countries.allCodes.contains _)
-    .transform[Country](Countries.allCodes.apply, _.alpha2)
+  val countryText = nonEmptyText.verifying(Countries.byCode.contains _)
+    .transform[Country](Countries.byCode.apply, _.alpha2)
 
   val nonPaidAddressMapping: Mapping[Address] = mapping(
     "lineOne" -> text,

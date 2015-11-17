@@ -5,8 +5,8 @@ import actions._
 import com.github.nscala_time.time.Imports
 import com.github.nscala_time.time.Imports._
 import com.gu.cas.CAS.CASSuccess
-import com.gu.identity.play.{PrivateFields, IdMinimalUser, StatusFields}
-import com.gu.membership.model.GBP
+import com.gu.i18n.GBP
+import com.gu.identity.play.{IdMinimalUser, PrivateFields, StatusFields}
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Serializer._
@@ -16,7 +16,6 @@ import com.typesafe.scalalogging.LazyLogging
 import configuration.{Config, CopyConfig, Email}
 import forms.MemberForm._
 import model._
-import play.api.data.Form
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc._
