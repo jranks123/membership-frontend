@@ -13,8 +13,8 @@ trait FrontPage extends Controller {
   val localEvents: EventbriteService
   val masterclassEvents: EventbriteService
 
-  def index = CachedAction.async { implicit request =>
-    implicit val currency: Currency = GBP
+  def index = NoCacheAction.async { implicit request =>
+    implicit val currency = countryGroup.currency
 
     val eventCollections = EventBrandCollection(
       liveEvents.getSortedByCreationDate.take(3),

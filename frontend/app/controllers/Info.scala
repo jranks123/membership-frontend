@@ -1,6 +1,6 @@
 package controllers
 
-import com.gu.i18n.{Currency, GBP}
+import com.gu.i18n.{USD, Currency, GBP}
 import play.api.mvc.Controller
 import views.support.Asset
 import scala.concurrent.Future
@@ -11,9 +11,9 @@ import services.{TouchpointBackend, GuardianContentService, AuthenticationServic
 import play.api.libs.concurrent.Execution.Implicits._
 
 trait Info extends Controller {
-  implicit val currency: Currency = GBP
 
-  def supporter = CachedAction.async { implicit request =>
+  def supporter = NoCacheAction.async { implicit request =>
+    implicit val currency = countryGroup.currency
 
     val pageImages = Seq(
       ResponsiveImageGroup(
@@ -67,6 +67,7 @@ trait Info extends Controller {
   }
 
   def supporterUSA = CachedAction.async { implicit request =>
+    implicit val currency = USD
 
     val pageImages = Seq(
       ResponsiveImageGroup(
@@ -115,7 +116,9 @@ trait Info extends Controller {
     }
   }
 
-  def patron() = CachedAction.async { implicit request =>
+  def patron() = NoCacheAction.async { implicit request =>
+    implicit val currency = countryGroup.currency
+
     val pageInfo = PageInfo(
       CopyConfig.copyTitlePatrons,
       request.path,
@@ -161,7 +164,9 @@ trait Info extends Controller {
     }
   }
 
-  def offersAndCompetitions = CachedAction.async { implicit request =>
+  def offersAndCompetitions = NoCacheAction.async { implicit request =>
+    implicit val currency = countryGroup.currency
+
     val results =
       GuardianContentService.offersAndCompetitionsContent.map(ContentItemOffer).filter(item =>
         item.content.fields.map(_("membershipAccess")).isEmpty && ! item.content.webTitle.startsWith("EXPIRED") && item.imgOpt.nonEmpty)

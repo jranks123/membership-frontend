@@ -57,6 +57,7 @@ trait UpgradeTier {
   def upgrade(tier: PaidTier) = MemberAction.async { implicit request =>
     import model.TierOrdering.upgradeOrdering
     val tp = request.touchpointBackend
+    implicit val currency = countryGroup.currency
 
     def previewUpgrade(subscription: SubscriptionDetails): Future[Result] = {
       if (subscription.inFreePeriodOffer) Future.successful(Ok(views.html.tier.upgrade.unavailable(request.member.tier, tier)))
@@ -207,9 +208,9 @@ trait CancelTier {
 }
 
 trait TierController extends Controller with UpgradeTier with DowngradeTier with CancelTier {
-  implicit val currency: Currency = GBP
 
   def change() = MemberAction.async { implicit request =>
+    implicit val currency = countryGroup.currency
     val catalog = request.catalog
     for {
       cat <- catalog

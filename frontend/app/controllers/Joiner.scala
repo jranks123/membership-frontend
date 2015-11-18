@@ -5,7 +5,7 @@ import actions._
 import com.github.nscala_time.time.Imports
 import com.github.nscala_time.time.Imports._
 import com.gu.cas.CAS.CASSuccess
-import com.gu.i18n.GBP
+import com.gu.i18n.{Country, CountryGroup}
 import com.gu.identity.play.{IdMinimalUser, PrivateFields, StatusFields}
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
@@ -28,7 +28,6 @@ import scala.concurrent.Future
 
 trait Joiner extends Controller with ActivityTracking with LazyLogging {
   val JoinReferrer = "join-referrer"
-  implicit val currency = GBP
 
   val contentApiService = GuardianContentService
 
@@ -56,6 +55,7 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
       customSignInUrl=Some(signInUrl)
     )
 
+    implicit val currency = countryGroup.currency
     TouchpointBackend.Normal.catalog.map(cat =>
       Ok(views.html.joiner.tierChooser(cat, pageInfo, eventOpt, accessOpt, signInUrl))
         .withSession(request.session.copy(data = request.session.data ++ contentRefererOpt.map(JoinReferrer -> _)))
@@ -89,9 +89,16 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
         case freeDetails: FreeTierDetails => Ok(views.html.joiner.form.friendSignup(freeDetails, getOrBlank(privateFields), marketingChoices, passwordExists))
         case paidDetails: PaidTierDetails =>
           val pageInfo = PageInfo.default.copy(stripePublicKey = Some(request.touchpointBackend.stripeService.publicKey))
-          Ok(views.html.joiner.form.payment(paidDetails, getOrBlank(privateFields), marketingChoices, passwordExists, pageInfo))
+          implicit val currency = countryGroup.currency
+          val userFields = setCountry(countryGroup, getOrBlank(privateFields))
+          Ok(views.html.joiner.form.payment(paidDetails, userFields, marketingChoices, passwordExists, pageInfo))
       }
     }
+  }
+
+  def setCountry(cg: CountryGroup, privateFields: PrivateFields): PrivateFields = {
+    val country = privateFields.billingCountry.orElse(cg.defaultCountry.map(_.alpha2))
+    privateFields.copy(billingCountry = country)
   }
 
   def enterStaffDetails = EmailMatchingGuardianAuthenticatedStaffNonMemberAction.async { implicit request =>

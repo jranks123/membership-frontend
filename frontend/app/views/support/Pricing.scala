@@ -19,8 +19,15 @@ case class Pricing(currency: Currency,
 }
 
 object Pricing {
-  implicit class WithPricing(tierDetails: PaidTierDetails) {
+  implicit class WithPricing(td: PaidTierDetails) {
     def pricingWithFallback(implicit currency: Currency): Pricing =
-      Pricing(GBP, tierDetails.yearlyPlanDetails.priceGBP.toInt, tierDetails.monthlyPlanDetails.priceGBP.toInt)
+      ( td.yearlyPlanDetails.pricingByCurrency.getPrice(currency),
+        td.monthlyPlanDetails.pricingByCurrency.getPrice(currency)
+      ) match {
+        case (Some(y), Some(m)) =>
+          Pricing(currency, y.toInt, m.toInt)
+        case _ =>
+          Pricing(GBP, td.yearlyPlanDetails.priceGBP.toInt, td.monthlyPlanDetails.priceGBP.toInt)
+      }
   }
 }

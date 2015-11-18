@@ -17,8 +17,6 @@ trait WhatsOn extends Controller with ActivityTracking {
   val localEvents: EventbriteService
   val masterclassEvents: EventbriteService
 
-  implicit val currency: Currency = GBP
-
   private def allEvents = {
     guLiveEvents.events ++ localEvents.events
   }
@@ -35,7 +33,8 @@ trait WhatsOn extends Controller with ActivityTracking {
     getCitiesWithCount(allEvents).map(FilterItem.tupled)
   }
 
-  def list = CachedAction.async { implicit request =>
+  def list = NoCacheAction.async { implicit request =>
+    implicit val currency = countryGroup.currency
     val pageInfo = PageInfo(
       CopyConfig.copyTitleEvents,
       request.path,
@@ -58,8 +57,9 @@ trait WhatsOn extends Controller with ActivityTracking {
     )
   }
 
-  def calendar = CachedAction { implicit request =>
+  def calendar = NoCacheAction { implicit request =>
     val locationOpt = request.getQueryString("location").filter(_.trim.nonEmpty)
+    implicit val currency = countryGroup.currency
 
     val calendarEvents =
       CalendarMonthDayGroup("Calendar", groupEventsByDayAndMonth(locationOpt.fold(allEvents)(allEventsByLocation)))
@@ -72,9 +72,11 @@ trait WhatsOn extends Controller with ActivityTracking {
     ))
   }
 
-  def listArchive = CachedAction { implicit request =>
+  def listArchive = NoCacheAction { implicit request =>
     val calendarArchive =
       CalendarMonthDayGroup("Archive", groupEventsByDayAndMonth(allEventsInArchive)(implicitly[Ordering[LocalDate]].reverse))
+
+    implicit val currency = countryGroup.currency
 
     Ok(views.html.event.eventsListArchive(
       PageInfo(s"${calendarArchive.title} | Events", request.path, None),
@@ -82,7 +84,9 @@ trait WhatsOn extends Controller with ActivityTracking {
     ))
   }
 
-  def masterclassesList = CachedAction.async { implicit request =>
+  def masterclassesList = NoCacheAction.async { implicit request =>
+    implicit val currency = countryGroup.currency
+
     val pageInfo = PageInfo(
       CopyConfig.copyTitleMasterclasses,
       request.path,
@@ -94,7 +98,9 @@ trait WhatsOn extends Controller with ActivityTracking {
       Ok(views.html.event.masterclassesList(cat, pageInfo, eventGroup)))
   }
 
-  def masterclassesListFilteredBy(rawTag: String, rawSubTag: String = "") = CachedAction.async { implicit request =>
+  def masterclassesListFilteredBy(rawTag: String, rawSubTag: String = "") = NoCacheAction.async { implicit request =>
+    implicit val currency = countryGroup.currency
+
     val pageInfo = PageInfo(
       CopyConfig.copyTitleMasterclasses,
       request.path,
