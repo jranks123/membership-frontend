@@ -10,6 +10,7 @@ import com.gu.membership.zuora.soap.models.errors.ResultError
 import com.gu.membership.zuora.soap.models.{PaidPreview, SubscriptionDetails}
 import forms.MemberForm._
 import model.{FlashMessage, PageInfo}
+import org.joda.time.DateTime
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.{Controller, DiscardingCookie, Result}
@@ -33,21 +34,23 @@ trait DowngradeTier extends ActivityTracking {
     }
   }
 
-  def downgradeToFriendConfirm() = PaidMemberAction.async { implicit request => // POST
+  def downgradeToFriendConfirm = PaidMemberAction.async { implicit request => // POST
     for {
       cancelledSubscription <- request.touchpointBackend.downgradeSubscription(request.member, request.user, extractCampaignCode(request))
     } yield Redirect(routes.TierController.downgradeToFriendSummary)
   }
 
-  def downgradeToFriendSummary() = PaidMemberAction.async { implicit request =>
+  def downgradeToFriendSummary = PaidMemberAction.async { implicit request =>
     val subscriptionService = request.touchpointBackend.subscriptionService
+    val catalogF = request.catalog
     val currentTier = request.member.tier
-    val futureTierName = "Friend"
     for {
-      subscriptionStatus <- subscriptionService.getSubscriptionStatus(request.member)
-      currentSubscription <- subscriptionService.getSubscriptionDetails(subscriptionStatus.currentVersion)
-      futureSubscription <- subscriptionService.getSubscriptionDetails(subscriptionStatus.futureVersionOpt.get)
-    } yield Ok(views.html.tier.downgrade.summary(currentSubscription, futureSubscription, currentTier, futureTierName))
+      subscription <- subscriptionService.getCurrentSubscriptionDetails(request.member)
+      cat <- catalogF
+    } yield {
+      val startDate = subscription.chargedThroughDate.map(_.plusDays(1)).getOrElse(DateTime.now)
+      Ok(views.html.tier.downgrade.summary(subscription, currentTier, cat, startDate))
+    }
   }
 }
 
@@ -110,25 +113,13 @@ trait UpgradeTier {
       }
     }
 
-    def currentSubscription = {
-      val subscriptionService = tp.subscriptionService
-
-      val subscriptionStatusFuture = subscriptionService.getSubscriptionStatus(request.member)
-      for {
-        subscriptionStatus <- subscriptionStatusFuture
-        currentSubscription <- subscriptionService.getSubscriptionDetails(subscriptionStatus.currentVersion)
-      } yield currentSubscription
-    }
-
-
     if (request.member.memberStatus.tier < tier) {
       for {
-        subscription <- currentSubscription
+        subscription <- tp.subscriptionService.getCurrentSubscriptionDetails(request.member)
         result <- previewUpgrade(subscription)
       } yield result
     }
     else Future.successful(Ok(views.html.tier.upgrade.unavailable(request.member.tier, tier)))
-
   }
 
   def upgradeConfirm(tier: PaidTier) = MemberAction.async { implicit request =>

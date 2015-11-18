@@ -28,9 +28,9 @@
                        data-pricing-option-amount="@pricing.yearly"/>
 
                 <div class="pseudo-radio">
-                    <div class="pseudo-radio__header">Pay £@pricing.yearly/year</div>
+                    <div class="pseudo-radio__header">Pay @currency.glyph@pricing.yearly/year</div>
                     @if(pricing.hasYearlySaving) {
-                        <p class="pseudo-radio__note">£@pricing.yearly one off annual payment (save £@pricing.yearlySaving per year)</p>
+                        <p class="pseudo-radio__note">@currency.glyph@pricing.yearly one off annual payment (save @currency.glyph@pricing.yearlySaving per year)</p>
                         @for(yearlySavingsNote <- details.yearlySavingNote) {
                             <p class="pseudo-radio__note">@yearlySavingsNote</p>
                         }
@@ -48,12 +48,12 @@
                        data-pricing-option-amount="@pricing.monthly"/>
 
                 <div class="pseudo-radio">
-                    <div class="pseudo-radio__header">Pay £@pricing.monthly/month</div>
+                    <div class="pseudo-radio__header">Pay @currency.glyph@pricing.monthly/month</div>
                     @pricing.savingInfo.map { savingInfo =>
                       <div class="price-info__saving">@savingInfo</div>
                     }
                     @if(pricing.hasYearlySaving) {
-                        <p class="pseudo-radio__note">£@pricing.monthly per month (£@pricing.yearlyMonthlyCost per year)</p>
+                        <p class="pseudo-radio__note">@currency.glyph@pricing.monthly per month (@currency.glyph@pricing.yearlyMonthlyCost per year)</p>
                     }
                     <p class="pseudo-radio__note">1 year membership, pay in instalments over a year</p>
                 </div>

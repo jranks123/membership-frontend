@@ -1,8 +1,12 @@
-@import com.gu.membership.salesforce.Member
 @import com.gu.membership.salesforce.Contact._
-@import com.gu.membership.salesforce.Contact
-@import com.gu.membership.salesforce.PaymentMethod
-@import com.gu.membership.salesforce.PaidTierMember
+@import com.gu.membership.salesforce.{Contact, Member, PaidTierMember, PaymentMethod}
+@import com.gu.membership.salesforce.Tier
+@import configuration.Links
+@import play.twirl.api.Html
+@import views.support.Dates._
+@import views.support.Prices._
+@import views.support.Social.joinThankyou
+
 @(
     member: Contact[Member, PaymentMethod],
     summary: model.MembershipSummary,
@@ -10,13 +14,6 @@
     returnDestinationOpt: Option[model.Destination],
     upgrade: Boolean
 )
-
-@import play.twirl.api.Html
-@import com.gu.membership.salesforce.Tier
-@import configuration.{Config, Links}
-@import views.support.Dates._
-@import views.support.Prices._
-@import views.support.Social.joinThankyou
 
 @title = @{
     if(upgrade) {

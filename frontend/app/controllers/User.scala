@@ -47,12 +47,18 @@ trait User extends Controller {
       }
     }
 
+    val subscriptionService = request.touchpointBackend.subscriptionService
+    val cardDetailsF = futureCardDetails
+    val restSubF = subscriptionService.accountWithLatestMembershipSubscription(request.member).map(_._2)
+    val membershipSummaryF = subscriptionService.getMembershipSubscriptionSummary(request.member)
+
     val futurePaymentDetails = for {
-      cardDetails <- futureCardDetails
-      subscriptionStatus <- request.touchpointBackend.subscriptionService.getSubscriptionStatus(request.member)
-      subscriptionDetails <- request.touchpointBackend.subscriptionService.getSubscriptionDetails(subscriptionStatus.currentVersion)
-      membershipSummary <- request.touchpointBackend.subscriptionService.getMembershipSubscriptionSummary(request.member)
-    } yield
+      restSub <- restSubF
+      subscriptionStatus <- subscriptionService.getSubscriptionStatus(restSub)
+      cardDetails <- cardDetailsF
+      membershipSummary <- membershipSummaryF
+    } yield {
+      val subscriptionDetails = SubscriptionDetails(restSub)
       Json.obj(
         "optIn" -> !subscriptionStatus.cancelled,
         "subscription" -> (cardDetails ++ Json.obj(
@@ -66,9 +72,10 @@ trait User extends Controller {
             "name" -> subscriptionDetails.planName,
             "amount" -> subscriptionDetails.planAmount * 100,
             "interval" -> (if (membershipSummary.annual) "year" else "month")
-          ))
           )
+        ))
       )
+    }
 
     futurePaymentDetails.map { paymentDetails => Ok(basicDetails(request.member) ++ paymentDetails) }
   }

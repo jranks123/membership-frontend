@@ -5,7 +5,7 @@ import actions._
 import com.github.nscala_time.time.Imports
 import com.github.nscala_time.time.Imports._
 import com.gu.cas.CAS.CASSuccess
-import com.gu.i18n.{Country, CountryGroup}
+import com.gu.i18n.CountryGroup
 import com.gu.identity.play.{IdMinimalUser, PrivateFields, StatusFields}
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe

@@ -1,16 +1,17 @@
 @import com.gu.membership.salesforce.Tier
 @import com.gu.membership.zuora.soap.models.SubscriptionDetails
-@import views.support.Prices._
 @import views.support.Dates._
 @import configuration.Config.idWebAppUrl
+@import org.joda.time.DateTime
 
+@import model.MembershipCatalog
 @(
     currentSubscription: SubscriptionDetails,
-    futureSubscription: SubscriptionDetails,
     currentTier: Tier,
-    futureTierName: String
+    catalog: MembershipCatalog,
+    friendTierStartDate: DateTime
 )
-@main("Change Tier Summary | " + futureTierName + " from " + currentTier.name) {
+@main("Change Tier Summary | " + catalog.friend.tier.name + " from " + currentTier.name) {
 
     <main role="main" class="page-content l-constrained">
 
@@ -38,7 +39,7 @@
                             Tier
                         </th>
                         <td id="qa-downgrade-summary-tier">
-                            @futureTierName
+                            @catalog.friend.tier.name
                         </td>
                     </tr>
                     <tr role="row">
@@ -46,15 +47,7 @@
                             Start date
                         </th>
                         <td id="qa-downgrade-summary-start">
-                            @futureSubscription.effectiveStartDate.pretty
-                        </td>
-                    </tr>
-                    <tr role="row">
-                        <th role="rowheader">
-                            @if(futureSubscription.annual){ Annual } else { Monthly } payment
-                        </th>
-                        <td>
-                            @futureSubscription.planAmount.pretty
+                            @friendTierStartDate.pretty
                         </td>
                     </tr>
                 </table>

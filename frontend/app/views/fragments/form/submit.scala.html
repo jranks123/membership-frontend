@@ -22,7 +22,7 @@
             </noscript>
             <button type="button" class="action js-submit-input u-hidden-non-js">
             @pricing.fold(Html("Join now")) { p =>
-              Pay £<span class="js-submit-price-option">@p.yearly</span> now
+              Pay @{p.currency.glyph}<span class="js-submit-price-option">@p.yearly</span> now
             }
             </button>
             <div class="loader js-loader"></div>
