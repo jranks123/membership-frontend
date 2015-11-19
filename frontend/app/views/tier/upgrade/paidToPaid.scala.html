@@ -16,7 +16,7 @@
     paidPreview: PaidPreview,
     currentSubscription: SubscriptionDetails,
     flashMessage: Option[model.FlashMessage]
-)(implicit token: play.filters.csrf.CSRF.Token, request: actions.AuthRequest[_], currency: Currency)
+)(implicit token: play.filters.csrf.CSRF.Token, request: actions.AuthRequest[_])
 
 @main("Upgrade to " + targetPlan.plan.tier.name, pageInfo=pageInfo) {
       <main role="main" class="page-content l-constrained">

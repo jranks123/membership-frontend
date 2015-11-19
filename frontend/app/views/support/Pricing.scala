@@ -1,41 +1,33 @@
 package views.support
 
-import com.gu.i18n.{GBP, Currency}
-import model.PaidTierDetails
-import views.support.Prices._
+import com.gu.i18n.Currency
+import model.{PaidTierDetails, Price}
 
-case class Pricing(currency: Currency,
-                   yearly: Int,
-                   monthly: Int) {
 
-  import Pricing.pretty
+case class Pricing(yearly: Price, monthly: Price) {
+  require(yearly.currency == monthly.currency, "The yearly and monthly prices should have the same currency")
 
-  lazy val yearlyMonthlyCost = 12 * monthly
-  lazy val yearlySaving = yearlyMonthlyCost - yearly
+  lazy val currency = monthly.currency
+  lazy val yearlyMonthlyPrice = monthly * 12
+  lazy val yearlySaving = yearlyMonthlyPrice - yearly.amount
   lazy val yearlyWith6MonthSaving = yearly / 2f
-  lazy val hasYearlySaving = yearlySaving > 0
-  lazy val yearlySavingsInMonths = (yearly - yearlyMonthlyCost) / monthly
+  lazy val hasYearlySaving = yearlySaving.amount > 0
+  lazy val yearlySavingsInMonths = (yearly.amount - yearlyMonthlyPrice.amount) / monthly.amount
 
   val savingInfo: Option[String] =
-    if (hasYearlySaving) Some(s"Save ${pretty(yearlySaving, currency)}/year") else None
-
-  val yearlyPretty = pretty(yearly, currency)
-  val monthlyPretty = pretty(monthly, currency)
+    if (hasYearlySaving) Some(s"Save ${yearlySaving.pretty}/year") else None
 }
 
 object Pricing {
-  def pretty(price: Int, currency: Currency) = currency.glyph + price
-  def pretty(price: Float, currency: Currency) = currency.glyph + "%.2f".format(price)
-
   implicit class WithPricing(td: PaidTierDetails) {
     def pricingWithFallback(implicit currency: Currency): Pricing =
       ( td.yearlyPlanDetails.pricingByCurrency.getPrice(currency),
         td.monthlyPlanDetails.pricingByCurrency.getPrice(currency)
       ) match {
         case (Some(y), Some(m)) =>
-          Pricing(currency, y.toInt, m.toInt)
+          Pricing(Price(y.toInt, currency), Price(m.toInt, currency))
         case _ =>
-          Pricing(GBP, td.yearlyPlanDetails.priceGBP.toInt, td.monthlyPlanDetails.priceGBP.toInt)
+          Pricing(td.yearlyPlanDetails.priceGBP, td.monthlyPlanDetails.priceGBP)
       }
   }
 }

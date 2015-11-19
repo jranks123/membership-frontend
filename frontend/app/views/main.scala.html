@@ -1,7 +1,4 @@
-@(
-    title: String,
-    pageInfo: model.PageInfo = model.PageInfo.default
-)(content: Html)
+@(pageInfo: model.PageInfo = model.PageInfo.default)(content: Html)
 
 @import play.api.libs.json.Json
 @import configuration.{Config, Social}
@@ -11,7 +8,7 @@
 <html class="js-off id--signed-out">
     <head>
         <meta charset="utf-8">
-        <title>@if(title.isEmpty){ @Config.siteTitle } else { @(s"$title | ${Config.siteTitle}") }</title>
+        <title>@if(pageInfo.title.isEmpty){ @Config.siteTitle } else { @(s"${pageInfo.title} | ${Config.siteTitle}") }</title>
 
         @fragments.meta.mobile()
         <meta name="description" content="@pageInfo.description"/>

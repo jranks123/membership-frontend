@@ -1,6 +1,5 @@
 package controllers
 
-import com.gu.i18n.{GBP, Currency}
 import model.RichEvent.EventBrandCollection
 import model._
 import play.api.libs.concurrent.Execution.Implicits._
@@ -13,9 +12,7 @@ trait FrontPage extends Controller {
   val localEvents: EventbriteService
   val masterclassEvents: EventbriteService
 
-  def index = NoCacheAction.async { implicit request =>
-    implicit val currency = countryGroup.currency
-
+  def index = CachedAction.async { implicit request =>
     val eventCollections = EventBrandCollection(
       liveEvents.getSortedByCreationDate.take(3),
       localEvents.getSortedByCreationDate.take(3),
