@@ -1,10 +1,9 @@
 
-@import model.MembershipCatalog
 @import com.gu.i18n.Currency
+@import model.MembershipCatalog
 @(catalog: MembershipCatalog, isReversed: Boolean)(implicit currency: Currency)
 
 @import com.gu.membership.salesforce.Tier._
-@import views.support.Prices._
 @import views.support.Pricing._
 
 @actionAttrs = {
@@ -27,14 +26,14 @@
                         @defining(catalog.supporter.pricingWithFallback) { pricing =>
                             <div class="price-info__item price-info__item--split">
                                 <div class="price-info__detail">
-                                    <strong class="price-info__value">@pricing.yearly.pretty</strong>
+                                    <strong class="price-info__value">@pricing.yearlyPretty</strong>
                                     <span class="price-info__date">/year</span>
                                 </div>
                                 <div class="price-info__saving">about $80/year</div>
                             </div>
                             <div class="price-info__item price-info__item--split price-info__item--last">
                                 <div class="price-info__detail price-info__detail--right">
-                                    <strong class="price-info__value">@pricing.monthly.pretty</strong>
+                                    <strong class="price-info__value">@pricing.monthlyPretty</strong>
                                     <span class="price-info__date">/month</span>
                                 </div>
                                 <div class="price-info__saving">about $8/month</div>

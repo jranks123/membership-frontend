@@ -8,6 +8,8 @@ case class Pricing(currency: Currency,
                    yearly: Int,
                    monthly: Int) {
 
+  import Pricing.pretty
+
   lazy val yearlyMonthlyCost = 12 * monthly
   lazy val yearlySaving = yearlyMonthlyCost - yearly
   lazy val yearlyWith6MonthSaving = yearly / 2f
@@ -15,10 +17,16 @@ case class Pricing(currency: Currency,
   lazy val yearlySavingsInMonths = (yearly - yearlyMonthlyCost) / monthly
 
   val savingInfo: Option[String] =
-    if (hasYearlySaving) Some(s"Save ${yearlySaving.pretty}/year") else None
+    if (hasYearlySaving) Some(s"Save ${pretty(yearlySaving, currency)}/year") else None
+
+  val yearlyPretty = pretty(yearly, currency)
+  val monthlyPretty = pretty(monthly, currency)
 }
 
 object Pricing {
+  def pretty(price: Int, currency: Currency) = currency.glyph + price
+  def pretty(price: Float, currency: Currency) = currency.glyph + "%.2f".format(price)
+
   implicit class WithPricing(td: PaidTierDetails) {
     def pricingWithFallback(implicit currency: Currency): Pricing =
       ( td.yearlyPlanDetails.pricingByCurrency.getPrice(currency),

@@ -5,7 +5,7 @@ import actions._
 import com.github.nscala_time.time.Imports
 import com.github.nscala_time.time.Imports._
 import com.gu.cas.CAS.CASSuccess
-import com.gu.i18n.CountryGroup
+import com.gu.i18n.{GBP, CountryGroup}
 import com.gu.identity.play.{IdMinimalUser, PrivateFields, StatusFields}
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
@@ -66,6 +66,8 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
     val flashMsgOpt = request.flash.get("error").map(FlashMessage.error)
     val userSignedIn = AuthenticationService.authenticatedUserFor(request)
     val catalogF = TouchpointBackend.Normal.catalog
+    implicit val currency = GBP
+
     userSignedIn match {
       case Some(user) => for {
         fullUser <- IdentityService(IdentityApi).getFullUserDetails(user, IdentityRequest(request))
@@ -209,8 +211,9 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
   }
 
   def thankyou(tier: Tier, upgrade: Boolean = false) = MemberAction.async { implicit request =>
+    implicit val currency = countryGroup.currency
 
-    def futureCustomerOpt = request.member.paymentMethod match {
+    val futureCustomerOpt = request.member.paymentMethod match {
       case StripePayment(id) =>
         request.touchpointBackend.stripeService.Customer.read(id).map(Some(_))
       case _ => Future.successful(None)

@@ -4,8 +4,9 @@
 @import configuration.Links
 @import play.twirl.api.Html
 @import views.support.Dates._
-@import views.support.Prices._
+@import views.support.Pricing
 @import views.support.Social.joinThankyou
+@import com.gu.i18n.Currency
 
 @(
     member: Contact[Member, PaymentMethod],
@@ -13,7 +14,7 @@
     cardOpt: Option[com.gu.membership.stripe.Stripe.Card],
     returnDestinationOpt: Option[model.Destination],
     upgrade: Boolean
-)
+)(implicit currency: Currency)
 
 @title = @{
     if(upgrade) {
@@ -74,13 +75,13 @@
                     </tr>
                     <tr role="row">
                         <th role="rowheader">Amount paid today</th>
-                        <td id="qa-joiner-summary-today">@summary.amountPaidToday.getOrElse(0f).pretty</td>
+                        <td id="qa-joiner-summary-today">@Pricing.pretty(summary.amountPaidToday.getOrElse(0f), currency)</td>
                     </tr>
                     <tr role="row">
                         <th role="rowheader">Next payment</th>
                         <td id="qa-joiner-summary-next">
                             @if(summary.initialFreePeriodOffer) {
-                                @summary.nextPaymentPrice.pretty (@summary.nextPaymentDate.pretty)
+                                @Pricing.pretty(summary.nextPaymentPrice, currency) (@summary.nextPaymentDate.pretty)
                             } else { @summary.nextPaymentDate.pretty }
                         </td>
                     </tr>
@@ -88,7 +89,7 @@
                         <th role="rowheader">
                             @if(summary.annual) { Annual } else { Monthly } payment
                         </th>
-                        <td id="qa-joiner-summary-recurring">@summary.planAmount.pretty</td>
+                        <td id="qa-joiner-summary-recurring">@Pricing.pretty(summary.planAmount, currency)</td>
                     </tr>
                     @if(summary.annual && summary.initialFreePeriodOffer) {
                         <tr role="row">

@@ -10,7 +10,7 @@
     <div class="price-info@if(canFlex) { price-info--flex} @if(isReversible) { price-info--@details.tier.slug}">
       <div class="price-info__item price-info__item--split">
         <div class="price-info__detail">
-          <strong class="price-info__value">@paidDetails.pricingWithFallback.yearly.pretty</strong>
+          <strong class="price-info__value">@paidDetails.pricingWithFallback.yearlyPretty</strong>
           <span class="price-info__date">/year</span>
         </div>
         @paidDetails.pricingWithFallback.savingInfo.map { savingMsg =>
@@ -19,7 +19,7 @@
       </div>
       <div class="price-info__item price-info__item--split price-info__item--last">
         <div class="price-info__detail price-info__detail--right">
-          <strong class="price-info__value">@paidDetails.pricingWithFallback.monthly.pretty</strong>
+          <strong class="price-info__value">@paidDetails.pricingWithFallback.monthlyPretty</strong>
           <span class="price-info__date">/month</span>
         </div>
       </div>
