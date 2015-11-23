@@ -218,13 +218,13 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
       invoiceItems <- zuoraSoapClient.query[InvoiceItem](SimpleFilter("SubscriptionNumber", subStatus.currentVersion.name))
       filteredInvoices = latestInvoiceItems(invoiceItems)
     } yield {
-      val currency = subscription.currentRatePlanUnsafe().currentChargeUnsafe().priceWithCurrencyUnsafe._1
+      val currency = subscription.currentRatePlanUnsafe().currentChargeUnsafe().unsafePrice.currency
       PaymentSummary(filteredInvoices, currency)
     }
   }
 
   def getMembershipSubscriptionSummary(memberId: ContactId): Future[MembershipSummary] = {
-    val latestSubF = accountWithLatestMembershipSubscription(memberId).map(_._2)
+    val latestSubF = accountWithLatestMembershipSubscription(memberId)
 
     def hasUserBeenInvoiced(memberId: ContactId) = latestSubF.map(_.customerAcceptanceDate.isBeforeNow)
 

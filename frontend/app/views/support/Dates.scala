@@ -35,6 +35,7 @@ object Dates {
   }
 
   def prettyDate(dt: DateTime): String = dt.toString("d MMMMM YYYY")
+  def prettyDate(dt: LocalDate): String = dt.toString("d MMMMM YYYY")
   def prettyDateNoYear(dt: DateTime): String = dt.toString("d MMMMM")
   def prettyTime(dt: DateTime): String = dt.toString(if (dt.getMinuteOfHour==0) "h" else "h.mm") + dt.toString("a").toLowerCase
 
@@ -53,6 +54,10 @@ object Dates {
   def dayInMonthWithSuffix(date: DateTime = DateTime.now): Html = addSuffix(date.toString("dd").toInt)
 
   def dayInMonthWithSuffixAndMonth(date: DateTime = DateTime.now): Html = {
+    Html(addSuffix(date.toString("dd").toInt) + " " + date.toString("MMMM"))
+  }
+
+  def dayInMonthWithSuffixAndMonth(date: LocalDate): Html = {
     Html(addSuffix(date.toString("dd").toInt) + " " + date.toString("MMMM"))
   }
 

@@ -182,12 +182,6 @@ trait MembershipCatalog {
     case _ => throw MembershipCatalogException(s"Cannot find PaidTierPlanDetails for ratePlanId: $productRatePlanId")
   }
 
-  def unsafePaidTierPlanDetails(subs: SubscriptionDetails): PaidTierPlanDetails = {
-     val prpId = subs.productRatePlanId
-     val plan = unsafePaidTierPlan(prpId)
-     PaidTierPlanDetails(plan, prpId, PricingSummary(Map(subs.currency -> subs.planAmount)))
-  }
-
   def ratePlanId(plan: TierPlan): String = planDetails(plan).productRatePlanId
 
   def publicTierDetails(tier: Tier): TierDetails = tier match {
@@ -209,15 +203,20 @@ trait MembershipCatalog {
     case Patron => patron
   }
 
-  def planDetails(tierPlan: TierPlan): TierPlanDetails = tierPlan match {
-    case FriendTierPlan(Current) => friend.planDetails
-    case StaffPlan => staff.planDetails
+  def paidTierPlanDetails(paidTierPlan: PaidTierPlan) = paidTierPlan match {
     case PaidTierPlan(Supporter, Year, Current) => supporter.yearlyPlanDetails
     case PaidTierPlan(Supporter, Month, Current) => supporter.monthlyPlanDetails
     case PaidTierPlan(Partner, Year, Current) => partner.yearlyPlanDetails
     case PaidTierPlan(Partner, Month, Current) => partner.monthlyPlanDetails
     case PaidTierPlan(Patron, Year, Current) => patron.yearlyPlanDetails
     case PaidTierPlan(Patron, Month, Current) => patron.monthlyPlanDetails
+    case _ => throw MembershipCatalogException("planDetails called with a legacy TierPlan")
+  }
+
+  def planDetails(tierPlan: TierPlan): TierPlanDetails = tierPlan match {
+    case FriendTierPlan(Current) => friend.planDetails
+    case StaffPlan => staff.planDetails
+    case paid: PaidTierPlan => paidTierPlanDetails(paid)
     case _ => throw MembershipCatalogException("planDetails called with a legacy TierPlan")
   }
 }

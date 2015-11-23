@@ -10,7 +10,8 @@ import com.gu.membership.stripe.Stripe.Customer
 import com.gu.membership.util.{FutureSupplier, Timing}
 import com.gu.membership.zuora.soap.Readers._
 import com.gu.membership.zuora.soap.actions.Actions.CreateFreeEventUsage
-import com.gu.membership.zuora.soap.models.{SubscriptionDetails, PreviewInvoiceItem}
+import com.gu.membership.zuora.soap.models.Queries.PreviewInvoiceItem
+import com.gu.membership.zuora.soap.models.{SubscriptionDetails}
 import com.gu.membership.zuora.soap.models.Results.CreateResult
 import com.typesafe.scalalogging.LazyLogging
 import configuration.Config

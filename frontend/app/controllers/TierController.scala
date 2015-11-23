@@ -1,7 +1,7 @@
 package controllers
 
 import actions._
-import com.gu.i18n.GBP
+import com.gu.i18n.{Currency, GBP}
 import com.gu.identity.play.PrivateFields
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
@@ -11,6 +11,7 @@ import com.gu.membership.zuora.soap.models.{PaidPreview, SubscriptionDetails}
 import forms.MemberForm._
 import model.{FlashMessage, PageInfo}
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.{Controller, DiscardingCookie, Result}
@@ -19,8 +20,10 @@ import services._
 import tracking.ActivityTracking
 import utils.CampaignCode.extractCampaignCode
 import views.support.DisplayText._
+import views.support.UpgradeSummary
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 trait DowngradeTier extends ActivityTracking {
   self: TierController =>
@@ -30,7 +33,7 @@ trait DowngradeTier extends ActivityTracking {
       cat <- request.catalog
       subsDetails <- request.touchpointBackend.subscriptionService.getCurrentSubscriptionDetails(request.member)
     } yield {
-      Ok(views.html.tier.downgrade.confirm(cat.unsafePaidTierPlanDetails(subsDetails).plan.tier, cat))
+      Ok(views.html.tier.downgrade.confirm(cat.unsafePaidTierPlan(subsDetails.productRatePlanId).tier, cat))
     }
   }
 
@@ -72,28 +75,22 @@ trait UpgradeTier {
           case Contact(d, c@PaidTierMember(_, _), p: StripePayment) =>
             val contact = Contact(d, c, p)
             val stripeCustomerF = tp.stripeService.Customer.read(contact.stripeCustomerId)
-            val subscriptionDetails = tp.subscriptionService.getCurrentSubscriptionDetails(request.member)
 
             for {
-              subs <- subscriptionDetails
-              preview <- MemberService.previewUpgradeSubscription(subs, contact, target, tp)
+              (account, restSub) <- tp.subscriptionService.accountWithLatestMembershipSubscription(request.member)
+              subs = SubscriptionDetails(restSub)
+              previewItems <- MemberService.previewUpgradeSubscription(subs, contact, target, tp)
               cat <- catalog
               customer <- stripeCustomerF
               privateFields <- identityUserFieldsF
             } yield {
+              val summary = UpgradeSummary(cat, previewItems, restSub, target, customer.card)
               val flashMsgOpt = request.flash.get("error").map(FlashMessage.error)
-              val currentPlan = cat.unsafePaidTierPlanDetails(subs)
-              val targetTierDetails = cat.paidTierDetails(target)
-              val targetPlan = targetTierDetails.byBillingPeriod(currentPlan.billingPeriod)
 
               Ok(views.html.tier.upgrade.paidToPaid(
-                currentPlan,
-                targetPlan,
-                target.benefits,
+                summary,
                 privateFields,
                 pageInfo,
-                PaidPreview(customer.card, preview),
-                subscription,
                 flashMsgOpt)(getToken, request.request))
             }
           case Contact(d, c@PaidTierMember(n, _), _) =>
