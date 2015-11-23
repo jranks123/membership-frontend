@@ -12,8 +12,8 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 trait Info extends Controller {
 
-  def supporter = NoCacheAction.async { implicit request =>
-    implicit val currency = countryGroup.currency
+  def supporter = CachedAction.async { implicit request =>
+    implicit val currency = GBP
 
     val pageImages = Seq(
       ResponsiveImageGroup(
@@ -116,8 +116,8 @@ trait Info extends Controller {
     }
   }
 
-  def patron() = NoCacheAction.async { implicit request =>
-    implicit val currency = countryGroup.currency
+  def patron() = CachedAction.async { implicit request =>
+    implicit val currency = GBP
 
     val pageInfo = PageInfo(
       CopyConfig.copyTitlePatrons,
@@ -164,8 +164,8 @@ trait Info extends Controller {
     }
   }
 
-  def offersAndCompetitions = NoCacheAction.async { implicit request =>
-    implicit val currency = countryGroup.currency
+  def offersAndCompetitions = CachedAction.async { implicit request =>
+    implicit val currency = GBP
 
     val results =
       GuardianContentService.offersAndCompetitionsContent.map(ContentItemOffer).filter(item =>

@@ -15,6 +15,6 @@ case class PaidTierPlanDetails(plan: PaidTierPlan, productRatePlanId: String, pr
   require(pricingByCurrency.value.contains(GBP), "Paid plans need to contain a GBP price")
 
   lazy val billingPeriod = plan.billingPeriod
-  lazy val priceGBP: Price = Price(pricingByCurrency.getPrice(GBP).get.toInt, GBP)
+  lazy val priceGBP = pricingByCurrency.getPrice(GBP).get
   lazy val currencies: Set[Currency] = pricingByCurrency.value.keys.toSet
 }

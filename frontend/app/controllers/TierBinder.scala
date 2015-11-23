@@ -1,6 +1,6 @@
 package controllers
 
-import com.gu.membership.salesforce.{PaidTier, Tier}
+import com.gu.membership.salesforce.{PaidTier, Tier, FreeTier}
 import play.api.mvc.PathBindable.Parsing
 
 object TierBinder {

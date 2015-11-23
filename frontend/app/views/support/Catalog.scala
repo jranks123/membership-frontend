@@ -1,7 +1,7 @@
 package views.support
 
 import com.gu.i18n._
-import com.gu.membership.model.{PaidTierPlan, TierPlan}
+import com.gu.membership.model.{Price, PaidTierPlan, TierPlan}
 import com.gu.membership.salesforce.{PaidTier, Tier}
 import model.MembershipCatalog.Val
 import model._
@@ -99,7 +99,7 @@ object Catalog {
       (details.yearlyPlanDetails.pricingByCurrency.getPrice(currency), details.monthlyPlanDetails.pricingByCurrency.getPrice(currency), tier)
     }.collect {
       case (Some(y), Some(m), tier) =>
-        val pricing = Pricing(Price(y.toInt, currency), Price(m.toInt, currency))
+        val pricing = Pricing(y, m)
         tier.toString -> Json.obj(
           "pricing" -> Json.toJson(pricing),
           "benefits" -> Benefits.forTier(tier).map(_.title)

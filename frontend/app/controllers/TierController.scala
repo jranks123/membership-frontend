@@ -60,7 +60,7 @@ trait UpgradeTier {
   def upgrade(tier: PaidTier) = MemberAction.async { implicit request =>
     import model.TierOrdering.upgradeOrdering
     val tp = request.touchpointBackend
-    implicit val currency = countryGroup.currency
+    implicit val currency = GBP
 
     def previewUpgrade(subscription: SubscriptionDetails): Future[Result] = {
       if (subscription.inFreePeriodOffer) Future.successful(Ok(views.html.tier.upgrade.unavailable(request.member.tier, tier)))
@@ -95,7 +95,7 @@ trait UpgradeTier {
                 pageInfo,
                 PaidPreview(customer.card, preview),
                 subscription,
-                flashMsgOpt)(getToken, request.request, currency))
+                flashMsgOpt)(getToken, request.request))
             }
           case Contact(d, c@PaidTierMember(n, _), _) =>
             throw new IllegalStateException(s"Unexpected state: member number $n has a paid tier but no payment details")
@@ -201,7 +201,7 @@ trait CancelTier {
 trait TierController extends Controller with UpgradeTier with DowngradeTier with CancelTier {
 
   def change() = MemberAction.async { implicit request =>
-    implicit val currency = countryGroup.currency
+    implicit val currency = GBP
     val catalog = request.catalog
     for {
       cat <- catalog

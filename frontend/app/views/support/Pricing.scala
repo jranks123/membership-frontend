@@ -1,8 +1,8 @@
 package views.support
 
 import com.gu.i18n.Currency
-import model.{PaidTierDetails, Price}
-
+import com.gu.membership.model.Price
+import model.PaidTierDetails
 
 case class Pricing(yearly: Price, monthly: Price) {
   require(yearly.currency == monthly.currency, "The yearly and monthly prices should have the same currency")
@@ -20,14 +20,17 @@ case class Pricing(yearly: Price, monthly: Price) {
 
 object Pricing {
   implicit class WithPricing(td: PaidTierDetails) {
+    lazy val allPricing: List[Pricing] = Currency.all.flatMap(pricing)
+
     def pricingWithFallback(implicit currency: Currency): Pricing =
-      ( td.yearlyPlanDetails.pricingByCurrency.getPrice(currency),
-        td.monthlyPlanDetails.pricingByCurrency.getPrice(currency)
-      ) match {
-        case (Some(y), Some(m)) =>
-          Pricing(Price(y.toInt, currency), Price(m.toInt, currency))
-        case _ =>
-          Pricing(td.yearlyPlanDetails.priceGBP, td.monthlyPlanDetails.priceGBP)
-      }
+      pricing(currency).getOrElse(
+        Pricing(td.yearlyPlanDetails.priceGBP, td.monthlyPlanDetails.priceGBP))
+
+    private def pricing(c: Currency): Option[Pricing] = {
+      td.yearlyPlanDetails.pricingByCurrency.getPrice(c)
+        .zip(td.monthlyPlanDetails.pricingByCurrency.getPrice(c))
+        .map((Pricing.apply _).tupled)
+        .headOption
+    }
   }
 }

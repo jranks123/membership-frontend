@@ -21,13 +21,6 @@ package object controllers extends CommonActions with LazyLogging{
     }
   }
 
-  implicit def countryGroup(implicit request: RequestHeader) =
-    request
-      .getQueryString(countryGroupKey)
-      .orElse(request.session.get(countryGroupKey))
-      .flatMap(CountryGroup.byId)
-      .getOrElse(CountryGroup.UK)
-
   def redirectToUnsupportedBrowserInfo[T: ClassTag](form: Form[T])(implicit req: RequestHeader): Future[Result] = {
     lazy val errors = form.errors.map { e => s"  - ${e.key}: ${e.messages.mkString(", ")}"}.mkString("\n")
     logger.error(s"Server-side form errors on joining indicates a Javascript problem: ${req.headers.get(USER_AGENT)}")

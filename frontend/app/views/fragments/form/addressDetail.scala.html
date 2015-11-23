@@ -1,4 +1,5 @@
 @import com.gu.i18n.{CountryGroup,Country}
+@import views.support.CountryWithCurrency
 
 @(
     heading: String = "",
@@ -45,15 +46,16 @@
                 class="select js-country"
                 required
                 aria-required="true">
-                @for(country <- CountryGroup.countries) {
-                    <option value="@country.alpha2"@if(userCountry.getOrElse("") == country.name){ selected}>@country.name</option>
+                @for(cc <- CountryWithCurrency.all) {
+                    <option value="@cc.country.alpha2"
+                            data-currency="@cc.currency.toString">@cc.country.name</option>
                 }
             </select>
             @fragments.form.errorMessage("Please enter your Country")
         </div>
 
         <div class="form-field">
-            <label class="label@if(addressRequired == false){ optional-marker}"
+            <label class="label@if(!addressRequired){ optional-marker}"
                    for="address-line-one-@(formType)">Address line 1</label>
             <input type="text"
                    name="@(formType).lineOne"
@@ -62,7 +64,7 @@
                    @* Salesforce accepts up to 255 chars but this field gets concatenated with address line 2 *@
                    maxlength="126"
                    class="input-text js-address-line-one"
-                   @if(addressRequired == true){required aria-required="true"} />
+                   @if(!addressRequired){required aria-required="true"} />
             @fragments.form.errorMessage(s"Please enter your ${heading.toLowerCase()} first line")
         </div>
 
@@ -78,14 +80,14 @@
         </div>
 
         <div class="form-field">
-            <label class="label @if(addressRequired == false){optional-marker}" for="town-@(formType)">Town</label>
+            <label class="label @if(!addressRequired){optional-marker}" for="town-@(formType)">Town</label>
             <input type="text"
                    name="@(formType).town"
                    value="@town"
                    id="town-@(formType)"
                    maxlength="40"
                    class="input-text js-town"
-                   @if(addressRequired == true){required aria-required="true"} />
+                   @if(addressRequired){required aria-required="true"} />
             @fragments.form.errorMessage(s"Please enter your ${heading.toLowerCase()} town")
         </div>
 
