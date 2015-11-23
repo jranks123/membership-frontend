@@ -1,6 +1,7 @@
 package services
 
 import com.github.nscala_time.time.Imports._
+import com.gu.i18n.Currency
 import com.gu.membership.model._
 import com.gu.membership.salesforce.ContactId
 import com.gu.membership.salesforce.Tier._
@@ -121,8 +122,8 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
     subscriptions <- zuoraSoapClient.query[Subscription](SimpleFilter("Name", subscriptionNumber))
   } yield subscriptions
 
-  def account(contact: ContactId): Future[Option[Account]] =
-    accounts(contact).map(_.headOption)
+  def account(contact: ContactId): Future[Account] =
+    accountWithLatestMembershipSubscription(contact).map(_._1)
 
   private def accounts(contact: ContactId): Future[Seq[Account]] =
     zuoraSoapClient.query[Account](SimpleFilter("crmId", contact.salesforceAccountId))
@@ -320,4 +321,11 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
 
   def getSubscriptionsByCasId(casId: String): Future[Seq[Subscription]] =
     zuoraSoapClient.query[Subscription](SimpleFilter("CASSubscriberID__c", casId))
+
+  def getCurrency(contactId: ContactId): Future[Currency] =
+    account(contactId).map { acc =>
+      Currency.fromString(acc.currency).getOrElse(
+        throw SubscriptionServiceError(s"Could not parse currency '${acc.currency}' for account ${acc.id}")
+      )
+    }
 }

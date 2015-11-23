@@ -1,8 +1,8 @@
 package controllers
 
 import actions._
+import com.gu.i18n.GBP
 import com.gu.identity.play.PrivateFields
-import com.gu.i18n.{Currency, GBP}
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Serializer._
@@ -57,13 +57,12 @@ trait DowngradeTier extends ActivityTracking {
 trait UpgradeTier {
   self: TierController =>
 
-  def upgrade(tier: PaidTier) = MemberAction.async { implicit request =>
-    import model.TierOrdering.upgradeOrdering
+  def upgrade(target: PaidTier) = ChangeToPaidAction(target).async { implicit request =>
     val tp = request.touchpointBackend
     implicit val currency = GBP
 
     def previewUpgrade(subscription: SubscriptionDetails): Future[Result] = {
-      if (subscription.inFreePeriodOffer) Future.successful(Ok(views.html.tier.upgrade.unavailable(request.member.tier, tier)))
+      if (subscription.inFreePeriodOffer) Future.successful(Ok(views.html.tier.upgrade.unavailable(request.member.tier, target)))
       else {
         val identityUserFieldsF = IdentityService(IdentityApi).getFullUserDetails(request.user, IdentityRequest(request)).map(_.privateFields.getOrElse(PrivateFields()))
         val catalog = request.catalog
@@ -77,20 +76,20 @@ trait UpgradeTier {
 
             for {
               subs <- subscriptionDetails
-              preview <- MemberService.previewUpgradeSubscription(subs, contact, tier, tp)
+              preview <- MemberService.previewUpgradeSubscription(subs, contact, target, tp)
               cat <- catalog
               customer <- stripeCustomerF
               privateFields <- identityUserFieldsF
             } yield {
               val flashMsgOpt = request.flash.get("error").map(FlashMessage.error)
               val currentPlan = cat.unsafePaidTierPlanDetails(subs)
-              val targetTierDetails = cat.paidTierDetails(tier)
+              val targetTierDetails = cat.paidTierDetails(target)
               val targetPlan = targetTierDetails.byBillingPeriod(currentPlan.billingPeriod)
 
               Ok(views.html.tier.upgrade.paidToPaid(
                 currentPlan,
                 targetPlan,
-                targetTierDetails.tier.benefits,
+                target.benefits,
                 privateFields,
                 pageInfo,
                 PaidPreview(customer.card, preview),
@@ -105,7 +104,7 @@ trait UpgradeTier {
               cat <- catalog
             } yield {
               val currentDetails = cat.freeTierDetails(c.tier)
-              val targetDetails = cat.paidTierDetails(tier)
+              val targetDetails = cat.paidTierDetails(target)
 
               Ok(views.html.tier.upgrade.freeToPaid(currentDetails, targetDetails, privateFields, pageInfo)(getToken, request.request, currency))
             }
@@ -113,32 +112,29 @@ trait UpgradeTier {
       }
     }
 
-    if (request.member.memberStatus.tier < tier) {
-      for {
-        subscription <- tp.subscriptionService.getCurrentSubscriptionDetails(request.member)
-        result <- previewUpgrade(subscription)
-      } yield result
-    }
-    else Future.successful(Ok(views.html.tier.upgrade.unavailable(request.member.tier, tier)))
+    for {
+      subscription <- tp.subscriptionService.getCurrentSubscriptionDetails(request.member)
+      result <- previewUpgrade(subscription)
+    } yield result
   }
 
-  def upgradeConfirm(tier: PaidTier) = MemberAction.async { implicit request =>
+  def upgradeConfirm(target: PaidTier) = ChangeToPaidAction(target).async { implicit request =>
     val identityRequest = IdentityRequest(request)
 
     def handleFree(freeMember: Contact[Member, NoPayment])(form: FreeMemberChangeForm) = for {
-      memberId <- MemberService.upgradeFreeSubscription(freeMember, tier, form, identityRequest, extractCampaignCode(request))
-    } yield Ok(Json.obj("redirect" -> routes.TierController.upgradeThankyou(tier).url))
+      memberId <- MemberService.upgradeFreeSubscription(freeMember, target, form, identityRequest, extractCampaignCode(request))
+    } yield Ok(Json.obj("redirect" -> routes.TierController.upgradeThankyou(target).url))
 
     def handlePaid(paidMember: Contact[Member, StripePayment])(form: PaidMemberChangeForm) = {
       val reauthFailedMessage: Future[Result] = Future {
-        Redirect(routes.TierController.upgrade(tier))
+        Redirect(routes.TierController.upgrade(target))
           .flashing("error" ->
           s"That password does not match our records. Please try again.")
       }
 
       def doUpgrade(): Future[Result] = {
-        MemberService.upgradePaidSubscription(paidMember, tier, identityRequest, extractCampaignCode(request), form).map {
-          _ => Redirect(routes.TierController.upgradeThankyou(tier))
+        MemberService.upgradePaidSubscription(paidMember, target, identityRequest, extractCampaignCode(request), form).map {
+          _ => Redirect(routes.TierController.upgradeThankyou(target))
         }
       }
 
@@ -199,7 +195,6 @@ trait CancelTier {
 }
 
 trait TierController extends Controller with UpgradeTier with DowngradeTier with CancelTier {
-
   def change() = MemberAction.async { implicit request =>
     implicit val currency = GBP
     val catalog = request.catalog

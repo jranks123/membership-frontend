@@ -1,52 +1,40 @@
-@import com.gu.i18n.CountryGroup
-@import model.PaidTierDetails
-@import views.support.Pricing._
+@import views.support.Pricing
+@(pricing: Pricing)
 
-@(tierDetails: PaidTierDetails, cg: CountryGroup)
+<div data-currency="@pricing.currency.toString" class="is-hidden">
+    <label class="label" for="annual">
+        <input type="radio"
+        class="is-hidden"
+        name="payment.type"
+        id="annual"
+        value="annual"
+        checked="checked"/>
 
-@for(pricing <- tierDetails.allPricing) {
-    @defining((pricing.yearly, pricing.monthly)) { case (yearly, monthly) =>
-    <div data-currency="@pricing.currency.toString" class="is-hidden">
-        <label class="label" for="annual">
-           <input type="radio"
-           class="is-hidden"
-           name="payment.type"
-           id="annual"
-           value="annual"
-           checked="checked"
-           data-pricing-option-amount="@yearly.amount"/>
+    <div class="pseudo-radio">
+        <div class="pseudo-radio__header">Pay @pricing.yearly.pretty/year</div>
+        @if(pricing.hasYearlySaving) {
+            <p class="pseudo-radio__note">@pricing.yearly.pretty
+                one off annual payment (save @pricing.yearlySaving.pretty per year)</p>
+                @for(savingInfo <- pricing.savingInfo) {
+                    <p class="pseudo-radio__note">@savingInfo</p>
+                }
+            } else {
+                <p class="pseudo-radio__note">One-off annual payment</p>
+            }
+        </div>
+    </label>
 
-           <div class="pseudo-radio">
-               <div class="pseudo-radio__header">Pay @yearly.pretty/year</div>
-               @if(pricing.hasYearlySaving) {
-                   <p class="pseudo-radio__note">@yearly.pretty
-                       one off annual payment (save @pricing.yearlySaving.pretty per year)</p>
-                   @for(savingInfo <- pricing.savingInfo) {
-                       <p class="pseudo-radio__note">@savingInfo</p>
-                   }
-               } else {
-                   <p class="pseudo-radio__note">One-off annual payment</p>
-               }
-           </div>
-       </label>
+    <label class="label" for="monthly">
+        <input type="radio"
+        class="is-hidden"
+        name="payment.type"
+        id="monthly"
+        value="month"/>
 
-       <label class="label" for="monthly">
-           <input type="radio"
-           class="is-hidden"
-           name="payment.type"
-           id="monthly"
-           value="month"
-           data-pricing-option-amount="@monthly"/>
-
-           <div class="pseudo-radio">
-               <div class="pseudo-radio__header">Pay @monthly.pretty/month</div>
-               <p class="pseudo-radio__note">@monthly.pretty
-                   per month (@pricing.yearlyMonthlyPrice.pretty per year)</p>
-               <p class="pseudo-radio__note">1 year membership, pay in instalments over a year</p>
-           </div>
-       </label>
-
-     </div>
-    }
-
-}
+        <div class="pseudo-radio">
+            <div class="pseudo-radio__header">Pay @pricing.monthly.pretty/month</div>
+            <p class="pseudo-radio__note">@pricing.monthly.pretty per month (@pricing.yearlyMonthlyPrice.pretty per year)</p>
+            <p class="pseudo-radio__note">1 year membership, pay in instalments over a year</p>
+        </div>
+    </label>
+</div>

@@ -1,7 +1,7 @@
-@import com.gu.i18n.Currency
 @import model.PaidTierDetails
+@import views.support.Pricing._
 
-@(details: PaidTierDetails, cg: CountryGroup)
+@(details: PaidTierDetails)
 
 <fieldset class="fieldset js-payment-options-container">
 
@@ -11,9 +11,10 @@
     </div>
 
     <div class="fieldset__fields">
-
         <div class="form-field">
-         @fragments.billingPeriodChoice(details, cg)
+            @for(pricing <- details.allPricing) {
+                @fragments.billingPeriodChoice(pricing)
+            }
         </div>
     </div>
 </fieldset>

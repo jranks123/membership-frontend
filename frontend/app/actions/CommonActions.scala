@@ -1,14 +1,15 @@
 package actions
 
 import com.gu.googleauth
-import com.gu.i18n.CountryGroup
+import com.gu.i18n.{Currency, CountryGroup}
+import com.gu.membership.salesforce.{PaidTier, Tier}
 import configuration.Config
 import controllers._
 import play.api.http.HeaderNames._
 import play.api.libs.json.Json
 import play.api.mvc.Results._
 import play.api.mvc._
-import services.AuthenticationService
+import services.{TouchpointBackend, AuthenticationService}
 import utils.GuMemCookie
 import utils.TestUsers.isTestUser
 import Functions._
@@ -96,6 +97,28 @@ trait CommonActions {
       val json = Json.obj("userId" -> user.id)
       Ok(json).withCookies(Cookie("GU_MEM", GuMemCookie.encodeUserJson(json), secure = true, httpOnly = false))
     }
+
+  case class CheckTierChangeTo(targetTier: PaidTier) extends ActionFilter[AnyMemberTierRequest] {
+    import model.TierOrdering.upgradeOrdering
+
+    override protected def filter[A](request: AnyMemberTierRequest[A]): Future[Option[Result]] = {
+      val subService = request.touchpointBackend.subscriptionService
+      subService.membershipCatalog.get().zip(
+        subService.getCurrency(request.member)
+      ).map { case (catalog, currency) =>
+        val currentTier = request.member.tier
+        val targetCurrencies = catalog.paidTierDetails(targetTier).currencies
+
+        if (targetCurrencies.contains(currency) && targetTier > currentTier) {
+          None
+        } else {
+          Some(Ok(views.html.tier.upgrade.unavailable(currentTier, targetTier)))
+        }
+      }
+    }
+  }
+
+  def ChangeToPaidAction(targetTier: PaidTier): ActionBuilder[AnyMemberTierRequest] = MemberAction andThen CheckTierChangeTo(targetTier)
 }
 
 trait OAuthActions extends googleauth.Actions {
