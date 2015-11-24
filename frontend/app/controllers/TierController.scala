@@ -1,17 +1,16 @@
 package controllers
 
 import actions._
-import com.gu.i18n.{Currency, GBP}
+import com.gu.i18n.GBP
 import com.gu.identity.play.PrivateFields
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Serializer._
+import com.gu.membership.zuora.soap.models.SubscriptionDetails
 import com.gu.membership.zuora.soap.models.errors.ResultError
-import com.gu.membership.zuora.soap.models.{PaidPreview, SubscriptionDetails}
 import forms.MemberForm._
 import model.{FlashMessage, PageInfo}
 import org.joda.time.DateTime
-import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.{Controller, DiscardingCookie, Result}
@@ -19,11 +18,9 @@ import play.filters.csrf.CSRF.Token.getToken
 import services._
 import tracking.ActivityTracking
 import utils.CampaignCode.extractCampaignCode
-import views.support.DisplayText._
 import views.support.UpgradeSummary
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 
 trait DowngradeTier extends ActivityTracking {
   self: TierController =>
@@ -77,7 +74,7 @@ trait UpgradeTier {
             val stripeCustomerF = tp.stripeService.Customer.read(contact.stripeCustomerId)
 
             for {
-              (account, restSub) <- tp.subscriptionService.accountWithLatestMembershipSubscription(request.member)
+              (account, restSub) <- tp.subscriptionService.latestMembershipSubscription(request.member)
               subs = SubscriptionDetails(restSub)
               previewItems <- MemberService.previewUpgradeSubscription(subs, contact, target, tp)
               cat <- catalog

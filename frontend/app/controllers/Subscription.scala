@@ -25,7 +25,7 @@ trait Subscription extends Controller {
 
   def remainingTickets() = AjaxPaidMemberAction.async { implicit request =>
     for {
-      (_, subscription) <- request.touchpointBackend.subscriptionService.accountWithLatestMembershipSubscription(request.member)
+      (_, subscription) <- request.touchpointBackend.subscriptionService.latestMembershipSubscription(request.member)
       ticketsUsedCount <- request.touchpointBackend.subscriptionService.getUsageCountWithinTerm(subscription, FreeEventTickets.unitOfMeasure)
     } yield {
       Ok(Json.obj(

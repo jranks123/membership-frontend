@@ -49,7 +49,7 @@ trait User extends Controller {
 
     val subscriptionService = request.touchpointBackend.subscriptionService
     val cardDetailsF = futureCardDetails
-    val restSubF = subscriptionService.accountWithLatestMembershipSubscription(request.member).map(_._2)
+    val restSubF = subscriptionService.latestMembershipSubscription(request.member).map(_._2)
     val membershipSummaryF = subscriptionService.getMembershipSubscriptionSummary(request.member)
 
     val futurePaymentDetails = for {
