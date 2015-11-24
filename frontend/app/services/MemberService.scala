@@ -2,17 +2,17 @@ package services
 
 import com.gu.identity.play.{IdMinimalUser, IdUser}
 import com.gu.membership.model._
+import com.gu.membership.salesforce.Contact._
 import com.gu.membership.salesforce.ContactDeserializer.Keys
 import com.gu.membership.salesforce._
-import com.gu.membership.salesforce.Contact._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Customer
 import com.gu.membership.util.{FutureSupplier, Timing}
 import com.gu.membership.zuora.soap.Readers._
 import com.gu.membership.zuora.soap.actions.Actions.CreateFreeEventUsage
 import com.gu.membership.zuora.soap.models.Queries.PreviewInvoiceItem
-import com.gu.membership.zuora.soap.models.{SubscriptionDetails}
 import com.gu.membership.zuora.soap.models.Results.CreateResult
+import com.gu.membership.zuora.soap.models.SubscriptionDetails
 import com.typesafe.scalalogging.LazyLogging
 import configuration.Config
 import controllers.IdentityRequest
@@ -142,12 +142,12 @@ trait MemberService extends LazyLogging with ActivityTracking {
   def recordFreeEventUsage(member: Contact[Member, PaymentMethod], event: RichEvent, order: EBOrder, quantity: Int): Future[CreateResult] = {
     val tp = TouchpointBackend.forUser(member)
     for {
-      (account, subscription) <- tp.subscriptionService.latestMembershipSubscription(member)
+      subs <- tp.subscriptionService.currentSubscription(member)
       description = s"event-id:${event.id};order-id:${order.id}"
-      action = CreateFreeEventUsage(account.id, description, quantity, subscription.subscriptionNumber)
+      action = CreateFreeEventUsage(subs.accountId, description, quantity, subs.number)
       result <- tp.zuoraSoapClient.authenticatedRequest(action)
     } yield {
-      logger.info(s"Recorded a complimentary event ticket usage for account ${account.id}, subscription: ${subscription.subscriptionNumber}, details: $description")
+      logger.info(s"Recorded a complimentary event ticket usage for account ${subs.accountId}, subscription: ${subs.number}, details: $description")
       result
     }
   }
@@ -156,8 +156,8 @@ trait MemberService extends LazyLogging with ActivityTracking {
     val tp = TouchpointBackend.forUser(member)
     Timing.record(tp.memberRepository.metrics, "retrieveComplimentaryTickets") {
       for {
-        (_, subscription) <- tp.subscriptionService.latestMembershipSubscription(member)
-        usageCount <- tp.subscriptionService.getUsageCountWithinTerm(subscription, FreeEventTickets.unitOfMeasure)
+        subs <- tp.subscriptionService.currentSubscription(member)
+        usageCount <- tp.subscriptionService.getUsageCountWithinTerm(subs, FreeEventTickets.unitOfMeasure)
       } yield {
         val hasComplimentaryTickets = usageCount.isDefined
         val allowanceNotExceeded = usageCount.exists(_ < FreeEventTickets.allowance)

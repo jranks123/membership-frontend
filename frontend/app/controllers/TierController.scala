@@ -74,7 +74,7 @@ trait UpgradeTier {
             val stripeCustomerF = tp.stripeService.Customer.read(contact.stripeCustomerId)
 
             for {
-              (account, restSub) <- tp.subscriptionService.latestMembershipSubscription(request.member)
+              (account, restSub) <- tp.subscriptionService.currentSubscription(request.member)
               subs = SubscriptionDetails(restSub)
               previewItems <- MemberService.previewUpgradeSubscription(subs, contact, target, tp)
               cat <- catalog

@@ -1,19 +1,18 @@
 package actions
 
+import actions.Fallbacks._
+import actions.Functions._
 import com.gu.googleauth
-import com.gu.i18n.{Currency, CountryGroup}
-import com.gu.membership.salesforce.{PaidTier, Tier}
+import com.gu.membership.salesforce.PaidTier
 import configuration.Config
 import controllers._
 import play.api.http.HeaderNames._
 import play.api.libs.json.Json
 import play.api.mvc.Results._
 import play.api.mvc._
-import services.{TouchpointBackend, AuthenticationService}
+import services.AuthenticationService
 import utils.GuMemCookie
 import utils.TestUsers.isTestUser
-import Functions._
-import Fallbacks._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -103,13 +102,14 @@ trait CommonActions {
 
     override protected def filter[A](request: AnyMemberTierRequest[A]): Future[Option[Result]] = {
       val subService = request.touchpointBackend.subscriptionService
+
       subService.membershipCatalog.get().zip(
-        subService.getCurrency(request.member)
-      ).map { case (catalog, currency) =>
+        subService.currentSubscription(request.member)
+      ).map { case (catalog, sub) =>
         val currentTier = request.member.tier
         val targetCurrencies = catalog.paidTierDetails(targetTier).currencies
 
-        if (targetCurrencies.contains(currency) && targetTier > currentTier) {
+        if (targetCurrencies.contains(sub.accountCurrency) && targetTier > currentTier) {
           None
         } else {
           Some(Ok(views.html.tier.upgrade.unavailable(currentTier, targetTier)))

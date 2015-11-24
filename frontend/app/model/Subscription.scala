@@ -7,70 +7,52 @@ import com.gu.membership.zuora.rest
 import com.gu.membership.zuora.soap.models.Queries.Account
 import org.joda.time.LocalDate
 
+private[model] case class CommonSubscription(
+  number: String,
+  id: String,
+  accountId: String,
+  accountCurrency: Currency,
+  contactId: ContactId,
+  plan: TierPlan,
+  productRatePlanId: String,
+  ratePlanId: String,
+  startDate: LocalDate,
+  termEndDate: LocalDate
+) {
+  def this(other: CommonSubscription) = this(
+    number = other.number,
+    id = other.id,
+    accountId = other.accountId,
+    accountCurrency = other.accountCurrency,
+    contactId = other.contactId,
+    plan = other.plan,
+    productRatePlanId = other.productRatePlanId,
+    ratePlanId = other.ratePlanId,
+    startDate = other.startDate,
+    termEndDate = other.termEndDate
+  )
+}
 
-trait Subscription {
-  def number: String
-  def accountCurrency: Currency
-  def contactId: ContactId
+trait PaymentStatus { self: CommonSubscription =>
   def features: Set[FeatureChoice]
-  def plan: TierPlan
-  def startDate: LocalDate
+  def userHasBeenInvoiced: Boolean
+  def isPaid: Boolean
 }
 
-case class FreeSubscription(accountCurrency: Currency,
-                            number: String,
-                            contactId: ContactId,
-                            plan: FreeTierPlan,
-                            startDate: LocalDate) extends Subscription {
-  val features = Set.empty[FeatureChoice]
+trait Free extends PaymentStatus { self: CommonSubscription =>
+  override def features = Set.empty[FeatureChoice]
+  override def userHasBeenInvoiced = false
+  override def isPaid = false
 }
 
-object FreeSubscription {
-  def apply(contactId: ContactId,
-            plan: FreeTierPlan,
-            account: Account,
-            sub: rest.Subscription): FreeSubscription = {
-
-     FreeSubscription(
-       accountCurrency = Subscription.accountCurrency(account),
-       number = sub.subscriptionNumber,
-       contactId = contactId,
-       plan = plan,
-       startDate = sub.contractEffectiveDate.toLocalDate)
-
-  }
-}
-
-case class PaidSubscription(accountCurrency: Currency,
-                            contactId: ContactId,
-                            number: String,
-                            defaultPaymentMethod: Option[String],
-                            features: Set[FeatureChoice],
-                            plan: PaidTierPlan,
-                            price: Price,
-                            startDate: LocalDate,
-                            firstPaymentDate: LocalDate,
-                            chargeThroughDate: Option[LocalDate]) extends Subscription
-
-
-object PaidSubscription {
-  def apply(contactId: ContactId,
-            plan: PaidTierPlan,
-            account: Account,
-            sub: rest.Subscription): PaidSubscription = {
-
-    val rp = sub.currentRatePlanUnsafe()
-    PaidSubscription(accountCurrency = Subscription.accountCurrency(account),
-                     contactId = contactId,
-                     number = sub.subscriptionNumber,
-                     defaultPaymentMethod = account.defaultPaymentMethodId,
-                     features = rp.subscriptionProductFeatures.map(f => FeatureChoice.byId(f.featureCode)).toSet,
-                     plan = plan,
-                     price = rp.currentChargeUnsafe().unsafePrice,
-                     startDate = sub.contractEffectiveDate.toLocalDate,
-                     firstPaymentDate = sub.customerAcceptanceDate.toLocalDate,
-                     chargeThroughDate = rp.currentCharge().flatMap(_.chargedThroughDate).map(_.toLocalDate))
-  }
+trait Paid extends PaymentStatus { self: CommonSubscription =>
+  def defaultPaymentMethod: Option[String]
+  def recurringPrice: Price
+  def firstPaymentDate: LocalDate
+  def chargedThroughDate: Option[LocalDate]
+  override def features: Set[FeatureChoice]
+  override def userHasBeenInvoiced = false
+  override def isPaid = true
 }
 
 object Subscription {
@@ -80,10 +62,33 @@ object Subscription {
 
   def apply(catalog: MembershipCatalog)(contactId: ContactId,
                                         account: Account,
-                                        sub: rest.Subscription): Subscription =
+                                        sub: rest.Subscription): CommonSubscription with PaymentStatus = {
+    val rp = sub.currentRatePlanUnsafe()
+    val productRatePlanId = rp.productRatePlanId
+    val tierPlan = catalog.unsafeTierPlan(productRatePlanId)
+    val subscription = CommonSubscription(
+      number = sub.subscriptionNumber,
+      id = sub.id,
+      accountId = account.id,
+      accountCurrency = accountCurrency(account),
+      contactId = contactId,
+      plan = tierPlan,
+      productRatePlanId = productRatePlanId,
+      ratePlanId = rp.id,
+      startDate = sub.contractEffectiveDate.toLocalDate,
+      termEndDate = sub.termEndDate.toLocalDate
+    )
 
-    catalog.unsafeTierPlan(sub.currentRatePlanUnsafe().productRatePlanId) match {
-      case free: FreeTierPlan => FreeSubscription(contactId, free, account, sub)
-      case paid: PaidTierPlan => PaidSubscription(contactId, paid, account, sub)
+    tierPlan match {
+      case _: FreeTierPlan => new CommonSubscription(subscription) with Free
+      case _: PaidTierPlan => new CommonSubscription(subscription) with Paid {
+        private val charge = rp.currentChargeUnsafe()
+        override def defaultPaymentMethod = account.defaultPaymentMethodId
+        override def chargedThroughDate = charge.chargedThroughDate.map(_.toLocalDate)
+        override def recurringPrice = charge.unsafePrice
+        override def firstPaymentDate = sub.customerAcceptanceDate.toLocalDate
+        override def features = rp.subscriptionProductFeatures.map(f => FeatureChoice.byId(f.featureCode)).toSet
+      }
     }
+  }
 }

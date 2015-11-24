@@ -4,7 +4,6 @@ import com.gu.i18n.Currency
 import org.joda.time.DateTime
 
 case class MembershipSummary(startDate: DateTime,
-                             firstPaymentEndDate: DateTime,
                              amountPaidToday: Option[Float],
                              currency: Currency,
                              planAmount: Float,

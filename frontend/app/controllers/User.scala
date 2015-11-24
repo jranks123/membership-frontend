@@ -29,56 +29,7 @@ trait User extends Controller {
     Ok(json).withCookies(Cookie("GU_MEM", GuMemCookie.encodeUserJson(json), secure = true, httpOnly = false))
   }
 
-  def meDetails = AjaxMemberAction.async { implicit request =>
-    def futureCardDetails = request.member.paymentMethod match {
-      case StripePayment(id) =>
-        for {
-          customer <- request.touchpointBackend.stripeService.Customer.read(id)
-        } yield Json.obj("card" -> Json.obj("last4" -> customer.card.last4, "type" -> customer.card.`type`))
-
-      case NoPayment =>
-        Future.successful(Json.obj())
-    }
-
-    def endDate(subscriptionDetails: SubscriptionDetails) = {
-      subscriptionDetails.chargedThroughDate.orElse {
-        if (subscriptionDetails.inFreePeriodOffer) Some(subscriptionDetails.contractAcceptanceDate)
-        else None
-      }
-    }
-
-    val subscriptionService = request.touchpointBackend.subscriptionService
-    val cardDetailsF = futureCardDetails
-    val restSubF = subscriptionService.latestMembershipSubscription(request.member).map(_._2)
-    val membershipSummaryF = subscriptionService.getMembershipSubscriptionSummary(request.member)
-
-    val futurePaymentDetails = for {
-      restSub <- restSubF
-      subscriptionStatus <- subscriptionService.getSubscriptionStatus(restSub)
-      cardDetails <- cardDetailsF
-      membershipSummary <- membershipSummaryF
-    } yield {
-      val subscriptionDetails = SubscriptionDetails(restSub)
-      Json.obj(
-        "optIn" -> !subscriptionStatus.cancelled,
-        "subscription" -> (cardDetails ++ Json.obj(
-          "start" -> membershipSummary.startDate,
-          "end" -> endDate(subscriptionDetails),
-          "nextPaymentPrice" -> membershipSummary.nextPaymentPrice * 100,
-          "nextPaymentDate" -> membershipSummary.nextPaymentDate,
-          "renewalDate" -> membershipSummary.renewalDate,
-          "cancelledAt" -> subscriptionStatus.futureVersionIdOpt.isDefined,
-          "plan" -> Json.obj(
-            "name" -> subscriptionDetails.planName,
-            "amount" -> subscriptionDetails.planAmount * 100,
-            "interval" -> (if (membershipSummary.annual) "year" else "month")
-          )
-        ))
-      )
-    }
-
-    futurePaymentDetails.map { paymentDetails => Ok(basicDetails(request.member) ++ paymentDetails) }
-  }
+  def meDetails = ???
 
   def basicDetails(member: Contact[Member, PaymentMethod]) = Json.obj(
     "userId" -> member.identityId,
