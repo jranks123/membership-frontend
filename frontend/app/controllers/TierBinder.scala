@@ -11,4 +11,8 @@ object TierBinder {
   implicit object bindablePaidTier extends Parsing[PaidTier](
     PaidTier.slugMap, _.slug, (key: String, e: Exception) => s"Cannot parse parameter $key as a PaidTier: ${e.getMessage}"
   )
+
+  implicit object bindableFreeTier extends Parsing[FreeTier](
+    FreeTier.slugMap, _.slug, (key: String, e: Exception) => s"Cannot parse parameter $key as a FreeTier: ${e.getMessage}"
+  )
 }

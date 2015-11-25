@@ -2,11 +2,11 @@
 @import org.joda.time.DateTime
 @import views.support.Dates._
 @import views.support.DisplayText._
-@import views.support.UpgradeSummary
+@import views.support.PaidToPaidUpgradeSummary
 @import views.html.helper.CSRF
 
 @(
-    summary: UpgradeSummary,
+    summary: PaidToPaidUpgradeSummary,
     userFields: com.gu.identity.play.PrivateFields,
     pageInfo: model.PageInfo,
     flashMessage: Option[model.FlashMessage]

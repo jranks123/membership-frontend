@@ -1,6 +1,7 @@
 package services
 
 import com.github.nscala_time.time.Imports._
+import com.gu.i18n.GBP
 import com.gu.membership.model._
 import com.gu.membership.salesforce.Tier._
 import com.gu.membership.salesforce.{Contact, ContactId, MemberStatus, PaymentMethod}
@@ -19,7 +20,7 @@ import com.gu.monitoring.ServiceMetrics
 import com.gu.services.PaymentService
 import com.typesafe.scalalogging.LazyLogging
 import configuration.RatePlanIds
-import forms.MemberForm.JoinForm
+import forms.MemberForm.{PaidMemberJoinForm, JoinForm}
 import model._
 import org.joda.time.DateTime
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -84,7 +85,7 @@ object SubscriptionService {
 
   def sortSubscriptions(subscriptions: Seq[Soap.Subscription]) = subscriptions.sortBy(_.version)
 
-  def featuresPerTier(zuoraFeatures: Seq[Soap.Feature])(plan: TierPlan, choice: Set[FeatureChoice]): Seq[Soap.Feature] = {
+   def featuresPerTier(zuoraFeatures: Seq[Soap.Feature])(plan: TierPlan, choice: Set[FeatureChoice]): Seq[Soap.Feature] = {
     def byChoice(choice: Set[FeatureChoice]) =
       zuoraFeatures.filter(f => choice.map(_.zuoraCode).contains(f.code))
 
@@ -121,12 +122,10 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
     subscriptions <- zuoraSoapClient.query[Soap.Subscription](SimpleFilter("Name", subscriptionNumber))
   } yield subscriptions
 
-  private def accounts(contact: ContactId): Future[Seq[Soap.Account]] =
-    zuoraSoapClient.query[Soap.Account](SimpleFilter("crmId", contact.salesforceAccountId))
 
   def currentSubscription(contact: ContactId): Future[model.Subscription] = for {
     catalog <- membershipCatalog.get()
-    accounts <- accounts(contact)
+    accounts <- zuoraSoapClient.query[Soap.Account](SimpleFilter("crmId", contact.salesforceAccountId))
     accountAndSubscriptionOpts <- Future.traverse(accounts) { account =>
       zuoraRestClient.latestSubscriptionOpt(ratePlanIds.ids, Set(account.id)).map(account -> _)
     }
@@ -139,6 +138,14 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
 
      model.Subscription(catalog)(contact, account, restSub)
     }
+
+  def currentPaidSubscription(contact: ContactId): Future[model.PaidSubscription] =
+    currentSubscription(contact).map {
+      case paid:PaidSubscription => paid
+      case sub =>
+        throw SubscriptionServiceError(s"Expecting subscription ${sub.number} to be paid, got a free one instead (tier: ${sub.plan})")
+    }
+
 
   /**
    * @return the current and the future subscription version of the user if
@@ -179,23 +186,42 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
     result <- zuoraSoapClient.authenticatedRequest(EnablePayment(sub.accountId, paymentMethod.id))
   } yield result
 
-  def createSubscription(memberId: ContactId,
-                         joinData: JoinForm,
-                         customerOpt: Option[Stripe.Customer],
-                         paymentDelay: Option[Period],
-                         casId: Option[String]): Future[SubscribeResult] = for {
+  def createFreeSubscription(memberId: ContactId, joinData: JoinForm): Future[SubscribeResult] =
+    for {
+      zuoraFeatures <- zuoraSoapClient.featuresSupplier.get()
+      ratePlanId <- findRatePlanId(joinData.plan)
+      result <- zuoraSoapClient.authenticatedRequest(Subscribe(
+        account = subscribe.Account.stripe(memberId, GBP, autopay = false),
+        paymentMethodOpt = None,
+        ratePlanId = ratePlanId,
+        firstName = joinData.name.first,
+        lastName = joinData.name.last,
+        address = joinData.deliveryAddress,
+        casIdOpt = None,
+        paymentDelay = None,
+        ipAddressOpt = None,
+        featureIds = Nil))
+    } yield result
+
+  def createPaidSubscription(memberId: ContactId,
+                             joinData: PaidMemberJoinForm,
+                             customer: Stripe.Customer): Future[SubscribeResult] = for {
+
     zuoraFeatures <- zuoraSoapClient.featuresSupplier.get()
     ratePlanId <- findRatePlanId(joinData.plan)
-    result <- zuoraSoapClient.authenticatedRequest(Subscribe(account = subscribe.Account.stripe(memberId, customerOpt.isDefined),
-                                                             paymentMethodOpt = customerOpt.map(subscribe.CreditCardReferenceTransaction),
-                                                             ratePlanId = ratePlanId,
-                                                             firstName = joinData.name.first,
-                                                             lastName = joinData.name.last,
-                                                             address = joinData.deliveryAddress,
-                                                             casIdOpt = casId,
-                                                             paymentDelay = paymentDelay,
-                                                             ipAddressOpt = None,
-                                                             featureIds = featuresPerTier(zuoraFeatures)(joinData.plan, joinData.featureChoice).map(_.id)))
+    result <- zuoraSoapClient.authenticatedRequest(Subscribe(
+      account = subscribe.Account.stripe(memberId, joinData.currencyFromAddress, autopay = true),
+      paymentMethodOpt = Some(subscribe.CreditCardReferenceTransaction(customer)),
+      ratePlanId = ratePlanId,
+      firstName = joinData.name.first,
+      lastName = joinData.name.last,
+      address = joinData.zuoraAccountAddress,
+      casIdOpt = None,
+      paymentDelay = None,
+      ipAddressOpt = None,
+      featureIds = featuresPerTier(zuoraFeatures)(joinData.plan, joinData.featureChoice).map(_.id))
+    )
+
   } yield result
 
   def getPaymentSummary(memberId: ContactId): Future[PaymentSummary] = {
@@ -307,6 +333,6 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
       } else throw SubscriptionServiceError("Cannot amend subscription, amendments are already pending")
     }
 
-  def getSubscriptionsByCasId(casId: String): Future[Seq[Subscription]] =
-    zuoraSoapClient.query[Subscription](SimpleFilter("CASSubscriberID__c", casId))
+  def getSubscriptionsByCasId(casId: String): Future[Seq[Soap.Subscription]] =
+    zuoraSoapClient.query[Soap.Subscription](SimpleFilter("CASSubscriberID__c", casId))
 }

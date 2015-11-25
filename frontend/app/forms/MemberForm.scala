@@ -1,6 +1,6 @@
 package forms
 
-import com.gu.i18n.{CountryGroup, Address, Country}
+import com.gu.i18n._
 import com.gu.membership.model._
 import com.gu.membership.salesforce.PaidTier
 import model.FeatureChoice
@@ -21,26 +21,32 @@ object MemberForm {
     val marketingChoices: MarketingChoicesForm
     val password: Option[String]
     val plan: TierPlan
-    val featureChoice: Set[FeatureChoice]
   }
 
   case class FriendJoinForm(name: NameForm, deliveryAddress: Address, marketingChoices: MarketingChoicesForm,
                             password: Option[String]) extends JoinForm {
     override val plan = FriendTierPlan.current
-    override val featureChoice = Set.empty[FeatureChoice]
   }
 
   case class StaffJoinForm(name: NameForm, deliveryAddress: Address, marketingChoices: MarketingChoicesForm,
                             password: Option[String]) extends JoinForm {
     override val plan = StaffPlan
-    override val featureChoice = Set.empty[FeatureChoice]
   }
 
-  case class PaidMemberJoinForm(tier: PaidTier, name: NameForm, payment: PaymentForm, deliveryAddress: Address,
-                                billingAddress: Option[Address], marketingChoices: MarketingChoicesForm,
-                                password: Option[String], casId: Option[String], subscriberOffer: Boolean,
-                                featureChoice: Set[FeatureChoice]) extends JoinForm {
+  case class PaidMemberJoinForm(tier: PaidTier,
+                                name: NameForm,
+                                payment: PaymentForm,
+                                deliveryAddress: Address,
+                                billingAddress: Option[Address],
+                                marketingChoices: MarketingChoicesForm,
+                                password: Option[String],
+                                casId: Option[String],
+                                subscriberOffer: Boolean,
+                                featureChoice: Set[FeatureChoice]
+                               ) extends JoinForm {
     override val plan = PaidTierPlan(tier, payment.billingPeriod, Current)
+    lazy val zuoraAccountAddress = billingAddress.getOrElse(deliveryAddress)
+    lazy val currencyFromAddress = CountryGroup.byCountryCode(zuoraAccountAddress.country.alpha2).map(_.currency).getOrElse(GBP)
   }
 
   case class AddressDetails(deliveryAddress: Address, billingAddress: Option[Address])

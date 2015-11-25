@@ -41,7 +41,7 @@ object Catalog {
     def fromPlanDetails(env: String)(tpd: TierPlanDetails): TierPlanDescription = {
       val prices = tpd match {
         case paid: PaidTierPlanDetails =>
-          paid.pricingByCurrency.value.toSeq.map { case (c, p) => s"$c: $p" }.mkString(", ")
+          paid.pricingByCurrency.prices.map(_.pretty).mkString("\n")
         case _ => "FREE"
       }
       TierPlanDescription(tierPlanName(tpd.plan), env, tpd.productRatePlanId, prices)

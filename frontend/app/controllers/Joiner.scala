@@ -5,7 +5,7 @@ import actions._
 import com.github.nscala_time.time.Imports
 import com.github.nscala_time.time.Imports._
 import com.gu.cas.CAS.CASSuccess
-import com.gu.i18n.{Currency, GBP, CountryGroup}
+import com.gu.i18n.{CountryGroup, GBP}
 import com.gu.identity.play.{IdMinimalUser, PrivateFields, StatusFields}
 import com.gu.membership.salesforce.Tier.Friend
 import com.gu.membership.salesforce._
@@ -176,57 +176,22 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
 
   def unsupportedBrowser = CachedAction(Ok(views.html.joiner.unsupportedBrowser()))
 
-  private def makeMember(tier: Tier, result: Result)(formData: JoinForm)(implicit request: AuthRequest[_]) = {
-
-    def checkCASIfRequiredAndReturnPaymentDelay(formData: JoinForm)(implicit request: AuthRequest[_]): Future[Either[String,Option[Period]]] = {
-      formData match {
-        case paidMemberJoinForm: PaidMemberJoinForm => {
-          paidMemberJoinForm.casId map { casId =>
-            for {
-              casResult <- casService.check(casId, Some(formData.deliveryAddress.postCode), formData.name.last)
-              casIdNotUsed <- request.touchpointBackend.subscriptionService.getSubscriptionsByCasId(casId)
-            } yield {
-              casResult match {
-                case success: CASSuccess if new DateTime(success.expiryDate).isAfterNow && casIdNotUsed.isEmpty => Right(Some(subscriberOfferDelayPeriod))
-                case _ => Left(s"Subscriber details invalid. Please contact ${Email.membershipSupport} for further assistance.")
-              }
-            }
-          }
-        }.getOrElse(Future.successful(Right(None)))
-        case _ => Future.successful(Right(None))
-      }
-    }
-
-    def makeMemberAfterValidation(subscriberValidation: Either[String, Option[Imports.Period]]) = {
-      subscriberValidation.fold({ errorString: String =>
-        Future.successful(Forbidden)
-      },{ paymentDelayOpt: Option[Period] =>
-        MemberService.createMember(request.user, formData, IdentityRequest(request), paymentDelayOpt, extractCampaignCode(request))
-          .map { member =>
-          for {
-            eventId <- PreMembershipJoiningEventFromSessionExtractor.eventIdFrom(request)
-            event <- EventbriteService.getBookableEvent(eventId)
-          } {
-            event.service.wsMetrics.put(s"join-$tier-event", 1)
-            val memberData = MemberData(member.salesforceContactId, request.user.id, tier.name, campaignCode=extractCampaignCode(request))
-            track(EventActivity("membershipRegistrationViaEvent", Some(memberData), EventData(event)), request.user)
-          }
-          result
-        }.recover {
-          case error: Stripe.Error => Forbidden(Json.toJson(error))
-      	  case error: ResultError => Forbidden
-          case error: ScalaforceError => Forbidden
-          case error: MemberServiceError => Forbidden
+  private def makeMember(tier: Tier, result: Result)(formData: JoinForm)(implicit request: AuthRequest[_]) =
+    MemberService.createMember(request.user, formData, IdentityRequest(request), extractCampaignCode(request))
+      .map { member =>
+        for {
+          eventId <- PreMembershipJoiningEventFromSessionExtractor.eventIdFrom(request)
+          event <- EventbriteService.getBookableEvent(eventId)
+        } {
+          event.service.wsMetrics.put(s"join-$tier-event", 1)
+          val memberData = MemberData(member.salesforceContactId, request.user.id, tier.name, campaignCode=extractCampaignCode(request))
+          track(EventActivity("membershipRegistrationViaEvent", Some(memberData), EventData(event)), request.user)
         }
-      })
+        result
+      } recover {
+      case error: Stripe.Error => Forbidden(Json.toJson(error))
+      case _: ResultError | _: ScalaforceError | _: MemberServiceError => Forbidden
     }
-
-    for {
-      subscriberValidation <- checkCASIfRequiredAndReturnPaymentDelay(formData)
-      member <- makeMemberAfterValidation(subscriberValidation)
-    } yield member
-
-  }
 
   def thankyou(tier: Tier, upgrade: Boolean = false) = MemberAction.async { implicit request =>
     implicit val currency = countryGroup.currency

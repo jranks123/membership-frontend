@@ -109,7 +109,7 @@ trait CommonActions {
         val currentTier = request.member.tier
         val targetCurrencies = catalog.paidTierDetails(targetTier).currencies
 
-        if (targetCurrencies.contains(sub.accountCurrency) && targetTier > currentTier) {
+        if (!sub.isInTrialPeriod && targetCurrencies.contains(sub.accountCurrency) && targetTier > currentTier) {
           None
         } else {
           Some(Ok(views.html.tier.upgrade.unavailable(currentTier, targetTier)))

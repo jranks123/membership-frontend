@@ -6,7 +6,6 @@ import com.gu.membership.salesforce.{FreeTier, PaidTier, Tier}
 import com.gu.membership.touchpoint.TouchpointBackendConfig.BackendType
 import com.gu.membership.zuora.rest
 import com.gu.membership.zuora.rest.{PricingSummary, ProductRatePlan, ProductRatePlanCharge}
-import com.gu.membership.zuora.soap.models.SubscriptionDetails
 import configuration.RatePlanIds
 import model.MembershipCatalog.{MembershipCatalogException, ProductRatePlanId}
 

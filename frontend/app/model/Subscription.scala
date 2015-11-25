@@ -13,7 +13,6 @@ private[model] case class CommonSubscription(
   accountId: String,
   accountCurrency: Currency,
   contactId: ContactId,
-  plan: TierPlan,
   productRatePlanId: String,
   ratePlanId: String,
   startDate: LocalDate,
@@ -25,7 +24,6 @@ private[model] case class CommonSubscription(
     accountId = other.accountId,
     accountCurrency = other.accountCurrency,
     contactId = other.contactId,
-    plan = other.plan,
     productRatePlanId = other.productRatePlanId,
     ratePlanId = other.ratePlanId,
     startDate = other.startDate,
@@ -33,19 +31,22 @@ private[model] case class CommonSubscription(
   )
 }
 
-trait PaymentStatus { self: CommonSubscription =>
+trait PaymentStatus[+T <: TierPlan] { self: CommonSubscription =>
   def features: Set[FeatureChoice]
   def userHasBeenInvoiced: Boolean
   def isPaid: Boolean
+  def isInTrialPeriod: Boolean
+  def plan: T
 }
 
-trait Free extends PaymentStatus { self: CommonSubscription =>
+trait Free extends PaymentStatus[FreeTierPlan] { self: CommonSubscription =>
   override def features = Set.empty[FeatureChoice]
   override def userHasBeenInvoiced = false
   override def isPaid = false
+  override def isInTrialPeriod = false
 }
 
-trait Paid extends PaymentStatus { self: CommonSubscription =>
+trait Paid extends PaymentStatus[PaidTierPlan] { self: CommonSubscription =>
   def defaultPaymentMethod: Option[String]
   def recurringPrice: Price
   def firstPaymentDate: LocalDate
@@ -53,6 +54,8 @@ trait Paid extends PaymentStatus { self: CommonSubscription =>
   override def features: Set[FeatureChoice]
   override def userHasBeenInvoiced = false
   override def isPaid = true
+  override def isInTrialPeriod =
+    chargedThroughDate.isEmpty && LocalDate.now().isBefore(firstPaymentDate)
 }
 
 object Subscription {
@@ -62,7 +65,7 @@ object Subscription {
 
   def apply(catalog: MembershipCatalog)(contactId: ContactId,
                                         account: Account,
-                                        sub: rest.Subscription): CommonSubscription with PaymentStatus = {
+                                        sub: rest.Subscription): CommonSubscription with PaymentStatus[TierPlan] = {
     val rp = sub.currentRatePlanUnsafe()
     val productRatePlanId = rp.productRatePlanId
     val tierPlan = catalog.unsafeTierPlan(productRatePlanId)
@@ -72,7 +75,6 @@ object Subscription {
       accountId = account.id,
       accountCurrency = accountCurrency(account),
       contactId = contactId,
-      plan = tierPlan,
       productRatePlanId = productRatePlanId,
       ratePlanId = rp.id,
       startDate = sub.contractEffectiveDate.toLocalDate,
@@ -80,14 +82,17 @@ object Subscription {
     )
 
     tierPlan match {
-      case _: FreeTierPlan => new CommonSubscription(subscription) with Free
-      case _: PaidTierPlan => new CommonSubscription(subscription) with Paid {
+      case p: FreeTierPlan => new CommonSubscription(subscription) with Free {
+        override def plan = p
+      }
+      case p: PaidTierPlan => new CommonSubscription(subscription) with Paid {
         private val charge = rp.currentChargeUnsafe()
         override def defaultPaymentMethod = account.defaultPaymentMethodId
         override def chargedThroughDate = charge.chargedThroughDate.map(_.toLocalDate)
         override def recurringPrice = charge.unsafePrice
         override def firstPaymentDate = sub.customerAcceptanceDate.toLocalDate
         override def features = rp.subscriptionProductFeatures.map(f => FeatureChoice.byId(f.featureCode)).toSet
+        override def plan = p
       }
     }
   }

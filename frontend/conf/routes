@@ -76,7 +76,8 @@ GET            /preview-masterclass/:id               controllers.Event.previewM
 GET            /tier/change                           controllers.TierController.change
 GET            /tier/cancel                           controllers.TierController.cancelTier
 POST           /tier/cancel/confirm                   controllers.TierController.cancelTierConfirm
-GET            /tier/cancel/summary                   controllers.TierController.cancelTierSummary
+GET            /tier/cancel/:freeTier/free/summary    controllers.TierController.cancelFreeTierSummary(freeTier: FreeTier)
+GET            /tier/cancel/paid/summary              controllers.TierController.cancelPaidTierSummary
 GET            /tier/change/friend                    controllers.TierController.downgradeToFriend
 POST           /tier/change/friend                    controllers.TierController.downgradeToFriendConfirm
 GET            /tier/change/friend/summary            controllers.TierController.downgradeToFriendSummary

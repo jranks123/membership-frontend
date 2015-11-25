@@ -1,16 +1,14 @@
 package controllers
 
-import actions._
 import com.gu.i18n.GBP
 import com.gu.identity.play.PrivateFields
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Serializer._
-import com.gu.membership.zuora.soap.models.SubscriptionDetails
 import com.gu.membership.zuora.soap.models.errors.ResultError
 import forms.MemberForm._
-import model.{FlashMessage, PageInfo}
-import org.joda.time.DateTime
+import model.{FlashMessage, FreeSubscription, PageInfo, PaidSubscription}
+import org.joda.time.{LocalDate, DateTime}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.{Controller, DiscardingCookie, Result}
@@ -18,7 +16,7 @@ import play.filters.csrf.CSRF.Token.getToken
 import services._
 import tracking.ActivityTracking
 import utils.CampaignCode.extractCampaignCode
-import views.support.UpgradeSummary
+import views.support.PaidToPaidUpgradeSummary
 
 import scala.concurrent.Future
 
@@ -28,9 +26,9 @@ trait DowngradeTier extends ActivityTracking {
   def downgradeToFriend() = PaidMemberAction.async { implicit request =>
     for {
       cat <- request.catalog
-      subsDetails <- request.touchpointBackend.subscriptionService.getCurrentSubscriptionDetails(request.member)
+      subs <- request.touchpointBackend.subscriptionService.currentSubscription(request.member)
     } yield {
-      Ok(views.html.tier.downgrade.confirm(cat.unsafePaidTierPlan(subsDetails.productRatePlanId).tier, cat))
+      Ok(views.html.tier.downgrade.confirm(cat.unsafePaidTierPlan(subs.productRatePlanId).tier, cat))
     }
   }
 
@@ -45,10 +43,10 @@ trait DowngradeTier extends ActivityTracking {
     val catalogF = request.catalog
     val currentTier = request.member.tier
     for {
-      subscription <- subscriptionService.getCurrentSubscriptionDetails(request.member)
+      subscription <- subscriptionService.currentPaidSubscription(request.member)
       cat <- catalogF
     } yield {
-      val startDate = subscription.chargedThroughDate.map(_.plusDays(1)).getOrElse(DateTime.now)
+      val startDate = subscription.chargedThroughDate.map(_.plusDays(1)).getOrElse(LocalDate.now).toDateTimeAtCurrentTime()
       Ok(views.html.tier.downgrade.summary(subscription, currentTier, cat, startDate))
     }
   }
@@ -61,55 +59,55 @@ trait UpgradeTier {
     val tp = request.touchpointBackend
     implicit val currency = GBP
 
-    def previewUpgrade(subscription: SubscriptionDetails): Future[Result] = {
-      if (subscription.inFreePeriodOffer) Future.successful(Ok(views.html.tier.upgrade.unavailable(request.member.tier, target)))
-      else {
-        val identityUserFieldsF = IdentityService(IdentityApi).getFullUserDetails(request.user, IdentityRequest(request)).map(_.privateFields.getOrElse(PrivateFields()))
-        val catalog = request.catalog
-        val pageInfo = PageInfo.default.copy(stripePublicKey = Some(tp.stripeService.publicKey))
+    val identityUserFieldsF =
+      IdentityService(IdentityApi)
+        .getFullUserDetails(request.user, IdentityRequest(request))
+        .map(_.privateFields.getOrElse(PrivateFields()))
 
-        request.member match {
-          case Contact(d, c@PaidTierMember(_, _), p: StripePayment) =>
-            val contact = Contact(d, c, p)
-            val stripeCustomerF = tp.stripeService.Customer.read(contact.stripeCustomerId)
+    val catalog = request.catalog
+    val pageInfo = PageInfo.default.copy(stripePublicKey = Some(tp.stripeService.publicKey))
 
-            for {
-              (account, restSub) <- tp.subscriptionService.currentSubscription(request.member)
-              subs = SubscriptionDetails(restSub)
-              previewItems <- MemberService.previewUpgradeSubscription(subs, contact, target, tp)
-              cat <- catalog
-              customer <- stripeCustomerF
-              privateFields <- identityUserFieldsF
-            } yield {
-              val summary = UpgradeSummary(cat, previewItems, restSub, target, customer.card)
-              val flashMsgOpt = request.flash.get("error").map(FlashMessage.error)
+    def previewFreeUpgrade(subscription: model.FreeSubscription, contact: Contact[FreeTierMember, NoPayment]): Future[Result] =
+      for {
+        privateFields <- identityUserFieldsF
+        cat <- catalog
+      } yield {
+        val currentDetails = cat.freeTierDetails(contact.tier)
+        val targetDetails = cat.paidTierDetails(target)
+        Ok(views.html.tier.upgrade.freeToPaid(currentDetails, targetDetails, privateFields, pageInfo)(getToken, request.request, currency))
+      }
 
-              Ok(views.html.tier.upgrade.paidToPaid(
-                summary,
-                privateFields,
-                pageInfo,
-                flashMsgOpt)(getToken, request.request))
-            }
-          case Contact(d, c@PaidTierMember(n, _), _) =>
-            throw new IllegalStateException(s"Unexpected state: member number $n has a paid tier but no payment details")
-          case Contact(d, c@FreeTierMember(_), _) =>
-            for {
-              privateFields <- identityUserFieldsF
-              cat <- catalog
-            } yield {
-              val currentDetails = cat.freeTierDetails(c.tier)
-              val targetDetails = cat.paidTierDetails(target)
+    def previewPaidUpgrade(subscription: model.PaidSubscription, contact: Contact[PaidTierMember, StripePayment]): Future[Result] = {
+      val stripeCustomerF = tp.stripeService.Customer.read(contact.stripeCustomerId)
 
-              Ok(views.html.tier.upgrade.freeToPaid(currentDetails, targetDetails, privateFields, pageInfo)(getToken, request.request, currency))
-            }
-        }
+      for {
+        previewItems <- MemberService.previewUpgradeSubscription(subscription, contact, target, tp)
+        cat <- catalog
+        customer <- stripeCustomerF
+        privateFields <- identityUserFieldsF
+      } yield {
+        val summary = PaidToPaidUpgradeSummary(cat, previewItems, subscription, target, customer.card)
+        val flashMsgOpt = request.flash.get("error").map(FlashMessage.error)
+
+        Ok(views.html.tier.upgrade.paidToPaid(
+          summary,
+          privateFields,
+          pageInfo,
+          flashMsgOpt)(getToken, request.request))
       }
     }
 
-    for {
-      subscription <- tp.subscriptionService.getCurrentSubscriptionDetails(request.member)
-      result <- previewUpgrade(subscription)
-    } yield result
+    tp.subscriptionService.currentSubscription(request.member).flatMap { sub =>
+      (sub, request.member) match {
+        case (sub: FreeSubscription, Contact(d, t: FreeTierMember, p: NoPayment)) =>
+          previewFreeUpgrade(sub, Contact(d, t, p))
+        case (sub: PaidSubscription, Contact(d, t: PaidTierMember, p: StripePayment)) =>
+          previewPaidUpgrade(sub, Contact(d, t, p))
+        case _ =>
+          val msg = s"Zuora account ${sub.accountId} is inconsistent with its corresponding Salesforce information"
+          throw new IllegalStateException(msg)
+      }
+    }
   }
 
   def upgradeConfirm(target: PaidTier) = ChangeToPaidAction(target).async { implicit request =>
@@ -164,26 +162,22 @@ trait CancelTier {
   }
 
   def cancelTierConfirm() = MemberAction.async { implicit request =>
-    for {
-      _ <- request.touchpointBackend.cancelSubscription(request.member, request.user, extractCampaignCode(request))
-    } yield {
-      Redirect("/tier/cancel/summary")
+    request.touchpointBackend.cancelSubscription(request.member, request.user, extractCampaignCode(request)).map { _ =>
+      request.member.tier match {
+        case m: FreeTierMember => Redirect(routes.TierController.cancelFreeTierSummary(m.tier))
+        case _ => Redirect(routes.TierController.cancelPaidTierSummary())
+      }
     }
   }
 
-  def cancelTierSummary() = AuthenticatedAction.async { implicit request =>
-    def subscriptionDetailsFor(memberOpt: Option[Contact[Member, PaymentMethod]]) = {
-      memberOpt.collect { case Contact(d, m, p: StripePayment) =>
-        request.touchpointBackend.subscriptionService.getCurrentSubscriptionDetails(d)
-      }
-    }
+  def cancelFreeTierSummary(freeTier: FreeTier) = AuthenticatedAction(
+    Ok(views.html.tier.cancel.summaryFree(freeTier))
+  )
 
-    for {
-      memberOpt <- request.touchpointBackend.memberRepository.getMember(request.user.id)
-      subscriptionDetails <- Future.sequence(subscriptionDetailsFor(memberOpt).toSeq)
-    } yield {
-      val currentTierOpt = memberOpt.map(_.tier)
-      Ok(views.html.tier.cancel.summary(subscriptionDetails.headOption, currentTierOpt))
+
+  def cancelPaidTierSummary = PaidMemberAction.async { implicit request =>
+    request.touchpointBackend.subscriptionService.currentPaidSubscription(request.member).map { sub =>
+      Ok(views.html.tier.cancel.summaryPaid(sub))
     }
   }
 }
