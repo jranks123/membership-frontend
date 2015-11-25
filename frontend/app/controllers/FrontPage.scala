@@ -183,7 +183,7 @@ trait FrontPage extends Controller {
       )
     )
 
-    Ok(views.html.welcome(PageInfo("Welcome", request.path, None), slideShowImages))
+    Ok(views.html.welcome(PageInfo.default.copy(title = "Welcome", url = request.path), slideShowImages))
   }
 }
 

@@ -2,9 +2,7 @@ package controllers
 
 import actions.Functions._
 import actions._
-import com.github.nscala_time.time.Imports
 import com.github.nscala_time.time.Imports._
-import com.gu.cas.CAS.CASSuccess
 import com.gu.i18n.{CountryGroup, GBP}
 import com.gu.identity.play.{IdMinimalUser, PrivateFields, StatusFields}
 import com.gu.membership.salesforce.Tier.Friend
@@ -14,7 +12,7 @@ import com.gu.membership.stripe.Stripe.Serializer._
 import com.gu.membership.zuora.soap.models.errors.ResultError
 import com.netaporter.uri.dsl._
 import com.typesafe.scalalogging.LazyLogging
-import configuration.{Config, CopyConfig, Email}
+import configuration.{Config, CopyConfig}
 import forms.MemberForm._
 import model._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -49,7 +47,7 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
       ((Config.idWebAppUrl / "signin") ? ("returnUrl" -> referer) ? ("skipConfirmation" -> "true")).toString
     }.getOrElse(Config.idWebAppSigninUrl(""))
 
-    val pageInfo = PageInfo(
+    val pageInfo = PageInfo.default.copy(
       title=CopyConfig.copyTitleChooseTier,
       url=request.path,
       description=Some(CopyConfig.copyDescriptionChooseTier),
@@ -92,14 +90,16 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
     } yield {
       val cg = countryGroup
       val paidDetails = catalog.paidTierDetails(tier)
-      val pageInfo = PageInfo.default.copy(stripePublicKey = Some(request.touchpointBackend.stripeService.publicKey))
+      val pageInfo = PageInfo.default.copy(
+        stripePublicKey = Some(request.touchpointBackend.stripeService.publicKey),
+        countryGroup = cg
+      )
 
       Ok(views.html.joiner.form.payment(
          details = paidDetails,
          userFields = setCountry(privateFields, cg),
          marketingChoices = marketingChoices,
          passwordExists = passwordExists,
-         countryGroup = cg,
          pageInfo = pageInfo))
     }
   }

@@ -35,10 +35,10 @@ trait WhatsOn extends Controller with ActivityTracking {
   }
 
   def list = CachedAction.async { implicit request =>
-    val pageInfo = PageInfo(
-      CopyConfig.copyTitleEvents,
-      request.path,
-      Some(CopyConfig.copyDescriptionEvents)
+    val pageInfo = PageInfo.default.copy(
+      title = CopyConfig.copyTitleEvents,
+      url = request.path,
+      description = Some(CopyConfig.copyDescriptionEvents)
     )
 
     val locationOpt = request.getQueryString("location").filter(_.trim.nonEmpty)
@@ -64,7 +64,7 @@ trait WhatsOn extends Controller with ActivityTracking {
       CalendarMonthDayGroup("Calendar", groupEventsByDayAndMonth(locationOpt.fold(allEvents)(allEventsByLocation)))
 
     Ok(views.html.event.calendar(
-      PageInfo(s"${calendarEvents.title} | Events", request.path, None),
+      PageInfo.default.copy(title = s"${calendarEvents.title} | Events", url = request.path),
       calendarEvents,
       locationFilterItems,
       locationOpt
@@ -76,16 +76,16 @@ trait WhatsOn extends Controller with ActivityTracking {
       CalendarMonthDayGroup("Archive", groupEventsByDayAndMonth(allEventsInArchive)(implicitly[Ordering[LocalDate]].reverse))
 
     Ok(views.html.event.eventsListArchive(
-      PageInfo(s"${calendarArchive.title} | Events", request.path, None),
+      PageInfo.default.copy(title = s"${calendarArchive.title} | Events", url = request.path),
       calendarArchive
     ))
   }
 
   def masterclassesList = CachedAction.async { implicit request =>
-    val pageInfo = PageInfo(
-      CopyConfig.copyTitleMasterclasses,
-      request.path,
-      Some(CopyConfig.copyDescriptionMasterclasses)
+    val pageInfo = PageInfo.default.copy(
+      title = CopyConfig.copyTitleMasterclasses,
+      url = request.path,
+      description = Some(CopyConfig.copyDescriptionMasterclasses)
     )
     val eventGroup = EventGroup("Masterclasses", masterclassEvents.events)
 
@@ -94,10 +94,10 @@ trait WhatsOn extends Controller with ActivityTracking {
   }
 
   def masterclassesListFilteredBy(rawTag: String, rawSubTag: String = "") = CachedAction.async { implicit request =>
-    val pageInfo = PageInfo(
-      CopyConfig.copyTitleMasterclasses,
-      request.path,
-      Some(CopyConfig.copyDescriptionMasterclasses)
+    val pageInfo = PageInfo.default.copy(
+      title = CopyConfig.copyTitleMasterclasses,
+      url = request.path,
+      description = Some(CopyConfig.copyDescriptionMasterclasses)
     )
     val tag = decodeTag( if(rawSubTag.nonEmpty) rawSubTag else rawTag )
     val eventGroup = EventGroup("Masterclasses", masterclassEvents.getTaggedEvents(tag))

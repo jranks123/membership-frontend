@@ -58,9 +58,10 @@ trait Info extends Controller {
 
     TouchpointBackend.Normal.catalog.map { catalog =>
       Ok(views.html.info.supporter(catalog,
-        PageInfo(CopyConfig.copyTitleSupporters,
-          request.path,
-          Some(CopyConfig.copyDescriptionSupporters)
+        PageInfo.default.copy(
+          title = CopyConfig.copyTitleSupporters,
+          url = request.path,
+          description = Some(CopyConfig.copyDescriptionSupporters)
         ),
         pageImages))
     }
@@ -111,7 +112,10 @@ trait Info extends Controller {
 
     TouchpointBackend.Normal.catalog.map { catalog =>
       Ok(views.html.info.supporterUSA(catalog,
-      PageInfo(CopyConfig.copyTitleSupporters, request.path, Some(CopyConfig.copyDescriptionSupporters)),
+      PageInfo.default.copy(
+        title = CopyConfig.copyTitleSupporters,
+        url = request.path,
+        description = Some(CopyConfig.copyDescriptionSupporters)),
       pageImages))
     }
   }
@@ -119,10 +123,10 @@ trait Info extends Controller {
   def patron() = CachedAction.async { implicit request =>
     implicit val currency = GBP
 
-    val pageInfo = PageInfo(
-      CopyConfig.copyTitlePatrons,
-      request.path,
-      Some(CopyConfig.copyDescriptionPatrons)
+    val pageInfo = PageInfo.default.copy(
+      title = CopyConfig.copyTitlePatrons,
+      url = request.path,
+      description = Some(CopyConfig.copyDescriptionPatrons)
     )
     val pageImages = Seq(
       ResponsiveImageGroup(

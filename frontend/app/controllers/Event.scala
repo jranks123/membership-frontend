@@ -103,12 +103,12 @@ trait Event extends Controller with ActivityTracking {
   }
 
   private def eventDetail(event: RichEvent)(implicit request: RequestHeader) = {
-    val pageInfo = PageInfo(
-      event.name.text,
-      request.path,
-      event.description.map(_.blurb),
-      event.socialImgUrl,
-      Some(event.schema)
+    val pageInfo = PageInfo.default.copy(
+      title = event.name.text,
+      url = request.path,
+      description = event.description.map(_.blurb),
+      image = event.socialImgUrl,
+      schemaOpt = Some(event.schema)
     )
     Ok(views.html.event.eventDetail(pageInfo, event))
   }

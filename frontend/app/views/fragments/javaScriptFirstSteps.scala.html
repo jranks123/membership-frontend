@@ -3,6 +3,7 @@
 @import configuration.Config
 @import model.SVG.Logos
 @import views.support.Asset
+@import views.support.CountryGroup._
 
 @import play.api.libs.json.Json
 
@@ -28,6 +29,7 @@
             stripePublicKey: '@stripePublicKey',
         }
         membership: {
+            localization: @Html(pageInfo.countryGroup.pageInfoJson.toString),
             buildNumber: '@app.BuildInfo.buildNumber',
             svgSprite: "@Asset.at("images/svg-sprite.svg")"
         },
