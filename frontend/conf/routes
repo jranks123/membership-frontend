@@ -76,8 +76,8 @@ GET            /preview-masterclass/:id               controllers.Event.previewM
 GET            /tier/change                           controllers.TierController.change
 GET            /tier/cancel                           controllers.TierController.cancelTier
 POST           /tier/cancel/confirm                   controllers.TierController.cancelTierConfirm
-GET            /tier/cancel/:freeTier/free/summary    controllers.TierController.cancelFreeTierSummary(freeTier: FreeTier)
 GET            /tier/cancel/paid/summary              controllers.TierController.cancelPaidTierSummary
+GET            /tier/cancel/free/summary    controllers.TierController.cancelFreeTierSummary
 GET            /tier/change/friend                    controllers.TierController.downgradeToFriend
 POST           /tier/change/friend                    controllers.TierController.downgradeToFriendConfirm
 GET            /tier/change/friend/summary            controllers.TierController.downgradeToFriendSummary
@@ -100,7 +100,6 @@ GET            /patterns                              controllers.PatternLibrary
 # User
 GET            /user/me                               controllers.User.me
 GET            /user/me/details                       controllers.User.meDetails
-GET            /user/check-subscriber                 controllers.User.checkSubscriberDetails(id: String, postcode: Option[String], lastName: String)
 
 # Vanity URLS
 GET            /subscriber-offer                      controllers.Redirects.homepageRedirect

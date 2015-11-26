@@ -11,7 +11,7 @@
 @import views.support.Links.BasicLink
 @import views.support.Asset
 
-@main(PageInfo(catalog = catalog)) {
+@main(PageInfo().title) {
     <div class="hero-banner" style="background-image: url(@Asset.at("images/join-challenger/clinton-background.jpg"))">
         <div class="hero-banner__inner">
             <div class="l-constrained">

@@ -1,6 +1,6 @@
 package controllers
 
-import com.gu.i18n.{CountryGroup, Country, GBP}
+import com.gu.i18n.{CountryGroup, GBP}
 import com.gu.identity.play.PrivateFields
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
@@ -48,7 +48,7 @@ trait DowngradeTier extends ActivityTracking {
       cat <- catalogF
     } yield {
       val startDate = subscription.chargedThroughDate.map(_.plusDays(1)).getOrElse(LocalDate.now).toDateTimeAtCurrentTime()
-      Ok(views.html.tier.downgrade.summary(subscription, currentTier, cat, startDate))
+      Ok(views.html.tier.downgrade.summary(subscription, cat, startDate))
     }
   }
 }
@@ -90,7 +90,7 @@ trait UpgradeTier {
           targetDetails,
           privateFields,
           pageInfo(privateFields)
-        )(getToken, request, currency))
+        )(getToken, request))
       }
 
     def fromPaid(subscription: model.PaidSubscription, contact: Contact[PaidTierMember, StripePayment]): Future[Result] = {
@@ -181,14 +181,14 @@ trait CancelTier {
   def cancelTierConfirm() = MemberAction.async { implicit request =>
     request.touchpointBackend.cancelSubscription(request.member, request.user, extractCampaignCode(request)).map { _ =>
       request.member.tier match {
-        case m: FreeTierMember => Redirect(routes.TierController.cancelFreeTierSummary(m.tier))
+        case m: FreeTierMember => Redirect(routes.TierController.cancelFreeTierSummary())
         case _ => Redirect(routes.TierController.cancelPaidTierSummary())
       }
     }
   }
 
-  def cancelFreeTierSummary(freeTier: FreeTier) = AuthenticatedAction(
-    Ok(views.html.tier.cancel.summaryFree(freeTier))
+  def cancelFreeTierSummary = AuthenticatedAction(
+    Ok(views.html.tier.cancel.summaryFree())
   )
 
 

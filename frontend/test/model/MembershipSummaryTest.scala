@@ -2,6 +2,7 @@ package model
 
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
+import views.support.ThankyouSummary
 
 class MembershipSummaryTest extends Specification  {
 
@@ -11,14 +12,14 @@ class MembershipSummaryTest extends Specification  {
     "have an annual setting of true for annual subscriptions when payment made at start of plan" in {
       val firstPaymentEndDate = termStartDate.plusYears(1).minusDays(1)
       val nextPaymentDate = firstPaymentEndDate.plusDays(1)
-      val partnerAnnualSummary = MembershipSummary(termStartDate, firstPaymentEndDate, Some(135f), 135f, 135f, nextPaymentDate, nextPaymentDate)
+      val partnerAnnualSummary = ThankyouSummary(termStartDate, firstPaymentEndDate, Some(135f), 135f, 135f, nextPaymentDate, nextPaymentDate)
       partnerAnnualSummary.annual mustEqual  true
     }
 
     "have an annual setting of false for monthly subscriptions when payment made at start of plan" in {
       val firstPaymentEndDate = termStartDate.plusMonths(1).minusDays(1)
       val nextPaymentDate = firstPaymentEndDate.plusDays(1)
-      val partnerMonthlySummary = MembershipSummary(termStartDate, firstPaymentEndDate, Some(15f), 15f, 15f, nextPaymentDate, nextPaymentDate)
+      val partnerMonthlySummary = ThankyouSummary(termStartDate, firstPaymentEndDate, Some(15f), 15f, 15f, nextPaymentDate, nextPaymentDate)
       partnerMonthlySummary.annual mustEqual  false
     }
 
@@ -28,7 +29,7 @@ class MembershipSummaryTest extends Specification  {
       val firstPaymentEndDate = firstPaymentStartDate.plusMonths(12 - initialDelay).minusDays(1)
       val renewalDate = termStartDate.plusYears(1)
 
-      val partnerAnnualSummary = MembershipSummary(termStartDate, firstPaymentEndDate, None, 135f, 67.5f, firstPaymentStartDate, renewalDate)
+      val partnerAnnualSummary = ThankyouSummary(termStartDate, firstPaymentEndDate, None, 135f, 67.5f, firstPaymentStartDate, renewalDate)
       partnerAnnualSummary.annual mustEqual  true
     }
 
@@ -38,7 +39,7 @@ class MembershipSummaryTest extends Specification  {
       val firstPaymentEndDate = termStartDate.plusMonths(1).minusDays(1)
 
 
-      val partnerMonthlySummary = MembershipSummary(termStartDate, firstPaymentEndDate, None, 15f, 15f, firstPaymentStartDate, firstPaymentStartDate)
+      val partnerMonthlySummary = ThankyouSummary(termStartDate, firstPaymentEndDate, None, 15f, 15f, firstPaymentStartDate, firstPaymentStartDate)
       partnerMonthlySummary.annual mustEqual  false
     }
   }

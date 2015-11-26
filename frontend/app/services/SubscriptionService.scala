@@ -1,7 +1,7 @@
 package services
 
 import com.github.nscala_time.time.Imports._
-import com.gu.i18n.GBP
+import com.gu.i18n.{Currency, GBP}
 import com.gu.membership.model._
 import com.gu.membership.salesforce.Tier._
 import com.gu.membership.salesforce.{Contact, ContactId, MemberStatus, PaymentMethod}
@@ -24,6 +24,7 @@ import forms.MemberForm.{PaidMemberJoinForm, JoinForm}
 import model._
 import org.joda.time.DateTime
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import views.support.ThankyouSummary
 
 import scala.concurrent.Future
 
@@ -234,19 +235,30 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
     }
   }
 
-  def getMembershipSubscriptionSummary(contact: Contact[MemberStatus, PaymentMethod]): Future[MembershipSummary] = {
+  def getMembershipSubscriptionSummary(contact: Contact[MemberStatus, PaymentMethod]): Future[ThankyouSummary] = {
     val latestSubF = currentSubscription(contact)
+    def price(amount: Float)(implicit currency: Currency) = Price(amount.toInt, currency)
+    def plan(sub: Subscription): (Price, BillingPeriod) = sub match {
+      case p: PaidSubscription => (p.recurringPrice, p.plan.billingPeriod)
+      case _ => (Price(0, sub.accountCurrency), Year)
+    }
 
     def getSummaryViaInvoice =
-      getPaymentSummary(contact).map { payment =>
-        MembershipSummary(
+      for {
+        payment <- getPaymentSummary(contact)
+        sub <- latestSubF
+      } yield {
+        implicit val currency = sub.accountCurrency
+        val (planAmount, bp) = plan(sub)
+        ThankyouSummary(
           startDate = payment.current.serviceStartDate,
-          currency = payment.currency,
-          amountPaidToday = Some(payment.totalPrice),
-          planAmount = payment.current.price,
-          nextPaymentPrice = payment.current.price,
+          amountPaidToday = price(payment.totalPrice),
+          planAmount = planAmount,
+          nextPaymentPrice = price(payment.current.price),
           nextPaymentDate = payment.current.nextPaymentDate,
-          renewalDate = payment.current.nextPaymentDate
+          renewalDate = payment.current.nextPaymentDate,
+          initialFreePeriodOffer = false,
+          billingPeriod = bp
         )
       }
 
@@ -255,18 +267,19 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
         sub <- latestSubF
         pd <- paymentService.paymentDetails(contact, Set(sub.productRatePlanId))
       } yield {
-        val planAmount = sub match {
-          case p: PaidSubscription => p.recurringPrice.amount.toFloat
-          case _ => 0f
-        }
-        MembershipSummary(
+        implicit val currency = sub.accountCurrency
+        val (planAmount, bp) = plan(sub)
+        def price(amount: Float) = Price(amount.toInt, sub.accountCurrency)
+
+        ThankyouSummary(
           startDate = sub.startDate.toDateTimeAtCurrentTime(),
-          currency = sub.accountCurrency,
-          amountPaidToday = None,
+          amountPaidToday = price(0f),
           planAmount = planAmount,
-          nextPaymentPrice = pd.nextPaymentPrice,
+          nextPaymentPrice = price(pd.nextPaymentPrice),
           nextPaymentDate = pd.nextPaymentDate,
-          renewalDate = pd.termEndDate.plusDays(1)
+          renewalDate = pd.termEndDate.plusDays(1),
+          sub.isInTrialPeriod,
+          bp
         )
       }
 

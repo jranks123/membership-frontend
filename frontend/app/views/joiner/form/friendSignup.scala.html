@@ -1,9 +1,11 @@
 @import views.support.PageInfo
-@(
-    userFields: com.gu.identity.play.PrivateFields,
-    marketingChoices: com.gu.identity.play.StatusFields,
-    passwordExists: Boolean,
-    pageInfo: PageInfo
+@import model.FreeTierDetails
+
+@(friendTierDetails: FreeTierDetails,
+  userFields: com.gu.identity.play.PrivateFields,
+  marketingChoices: com.gu.identity.play.StatusFields,
+  passwordExists: Boolean,
+  pageInfo: PageInfo
 )(implicit token: play.filters.csrf.CSRF.Token)
 
 @import com.gu.membership.salesforce.Tier.Friend
@@ -30,7 +32,7 @@
             <section class="form-section">
 
                 <div class="form-section__lead-in sign-in-required">
-                    @fragments.joiner.signedInAs(routes.Joiner.enterDetails(Friend).url)
+                    @fragments.joiner.signedInAs(routes.Joiner.enterFriendDetails().url)
                 </div>
 
                 <div class="form-section__content">
@@ -63,10 +65,8 @@
                     </div>
 
                     @fragments.form.errorMessageDisplay()
-                    @fragments.form.submit(None)
-
+                    @fragments.form.submit(friendTierDetails)
                 </div>
-
             </section>
         </form>
     </main>

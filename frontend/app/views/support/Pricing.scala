@@ -22,9 +22,12 @@ object Pricing {
   implicit class WithPricing(td: PaidTierDetails) {
     lazy val allPricing: List[Pricing] = Currency.all.flatMap(pricing)
 
-    def pricingWithFallback(implicit currency: Currency): Pricing =
-      pricing(currency).getOrElse(
-        Pricing(td.yearlyPlanDetails.priceGBP, td.monthlyPlanDetails.priceGBP))
+    def unsafePriceByCurrency(currency: Currency) = pricing(currency).getOrElse {
+      val ratePlanIds = Seq(td.monthlyPlanDetails.productRatePlanId, td.yearlyPlanDetails.productRatePlanId).mkString(",")
+      throw new NoSuchElementException(s"Cannot find a $currency price for tier ${td.tier} (product rate plan ids: $ratePlanIds)")
+    }
+
+    def gbpPricing = Pricing(td.yearlyPlanDetails.priceGBP, td.monthlyPlanDetails.priceGBP)
 
     private def pricing(c: Currency): Option[Pricing] = {
       td.yearlyPlanDetails.pricingByCurrency.getPrice(c)

@@ -9,7 +9,7 @@ import views.support.PageInfo.FormI18n
 case class PageInfo(title: String = CopyConfig.copyTitleDefault,
                     url: String = "/",
                     description: Option[String] = Some(CopyConfig.copyDescriptionDefault),
-                    image: Option[String] = Config.membershipUrl + Asset.at("images/common/mem-promo.jpg"),
+                    image: Option[String] = Some(Config.membershipUrl + Asset.at("images/common/mem-promo.jpg")),
                     schemaOpt: Option[EventSchema] = None,
                     customSignInUrl: Option[String] = None,
                     stripePublicKey: Option[String] = None,

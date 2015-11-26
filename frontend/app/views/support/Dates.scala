@@ -20,6 +20,12 @@ object Dates {
     lazy val prettyWithTime = prettyDateWithTime(dt)
   }
 
+  implicit class RichLocalDate(ld: LocalDate) {
+    val dt = ld.toDateTimeAtCurrentTime()
+    lazy val pretty = prettyDate(dt)
+    lazy val prettyWithTime = prettyDateWithTime(dt)
+  }
+
   implicit class RichInstant(dt: Instant) {
     lazy val pretty = prettyDate(new DateTime(dt))
     lazy val prettyWithoutYear = prettyDateNoYear(new DateTime(dt))

@@ -30,9 +30,7 @@
             stripePublicKey: '@stripePublicKey',
         }
         membership: {
-            @for(form <- pageInfo.formI18n) {
-                checkoutForm: @Html(Json.toJson(form).toString),
-            }
+            checkoutForm: @Html(Json.toJson(pageInfo.formI18n).toString),
             buildNumber: '@app.BuildInfo.buildNumber',
             svgSprite: "@Asset.at("images/svg-sprite.svg")"
         },

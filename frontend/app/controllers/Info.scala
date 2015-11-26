@@ -1,14 +1,15 @@
 package controllers
 
-import com.gu.i18n.{USD, Currency, GBP}
-import play.api.mvc.Controller
-import views.support.{PageInfo, Asset}
-import scala.concurrent.Future
+import com.gu.i18n.{GBP, USD}
 import configuration.CopyConfig
 import forms.MemberForm._
 import model._
-import services.{TouchpointBackend, GuardianContentService, AuthenticationService, EmailService}
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.mvc.Controller
+import services.{AuthenticationService, EmailService, GuardianContentService, TouchpointBackend}
+import views.support.{Asset, PageInfo}
+
+import scala.concurrent.Future
 
 trait Info extends Controller {
 
@@ -111,7 +112,7 @@ trait Info extends Controller {
 
 
     TouchpointBackend.Normal.catalog.map { catalog =>
-      Ok(views.html.info.supporterUSA(catalog,
+      Ok(views.html.info.supporterUSA(catalog.supporter,
       PageInfo(
         title = CopyConfig.copyTitleSupporters,
         url = request.path,

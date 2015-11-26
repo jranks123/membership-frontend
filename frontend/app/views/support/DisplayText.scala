@@ -44,7 +44,7 @@ object DisplayText {
   }
 
   implicit class PaidTierDetailsCopy(paidTierDetails: PaidTierDetails) {
-    private val pricing = paidTierDetails.pricingWithFallback(GBP)
+    private val pricing = paidTierDetails.gbpPricing
 
     val yearlySavingNote: Option[String] = paidTierDetails.tier match {
       case Supporter => Some("1 year membership, 2 months free")

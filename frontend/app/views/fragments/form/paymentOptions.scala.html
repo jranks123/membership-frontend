@@ -13,7 +13,7 @@
     <div class="fieldset__fields">
         <div class="form-field">
             @for(pricing <- details.allPricing) {
-                @fragments.billingPeriodChoice(pricing)
+                @fragments.pricing.billingPeriodChoice(pricing)
             }
         </div>
     </div>

@@ -120,8 +120,10 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
   def enterFriendDetails = NonMemberAction(Friend).async { implicit request =>
     for {
       (privateFields, marketingChoices, passwordExists) <- identityDetails(request.user, request)
+      catalog <- request.catalog
     } yield {
       Ok(views.html.joiner.form.friendSignup(
+        catalog.friend,
         privateFields,
         marketingChoices,
         passwordExists,
@@ -129,13 +131,13 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
     }
   }
 
-
   def enterStaffDetails = EmailMatchingGuardianAuthenticatedStaffNonMemberAction.async { implicit request =>
     val flashMsgOpt = request.flash.get("success").map(FlashMessage.success)
     for {
       (privateFields, marketingChoices, passwordExists) <- identityDetails(request.identityUser, request)
+      catalog <- TouchpointBackend.forUser(request.identityUser).catalog
     } yield {
-      Ok(views.html.joiner.form.addressWithWelcomePack(privateFields, marketingChoices, passwordExists, flashMsgOpt))
+      Ok(views.html.joiner.form.addressWithWelcomePack(catalog.staff, privateFields, marketingChoices, passwordExists, flashMsgOpt))
     }
   }
 
@@ -201,8 +203,6 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
     }
 
   def thankyou(tier: Tier, upgrade: Boolean = false) = MemberAction.async { implicit request =>
-    implicit val currency = countryGroup.currency
-
     val futureCustomerOpt = request.member.paymentMethod match {
       case StripePayment(id) =>
         request.touchpointBackend.stripeService.Customer.read(id).map(Some(_))
