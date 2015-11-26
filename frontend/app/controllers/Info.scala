@@ -2,7 +2,7 @@ package controllers
 
 import com.gu.i18n.{USD, Currency, GBP}
 import play.api.mvc.Controller
-import views.support.Asset
+import views.support.{PageInfo, Asset}
 import scala.concurrent.Future
 import configuration.CopyConfig
 import forms.MemberForm._
@@ -58,7 +58,7 @@ trait Info extends Controller {
 
     TouchpointBackend.Normal.catalog.map { catalog =>
       Ok(views.html.info.supporter(catalog,
-        PageInfo.default.copy(
+        PageInfo(
           title = CopyConfig.copyTitleSupporters,
           url = request.path,
           description = Some(CopyConfig.copyDescriptionSupporters)
@@ -112,7 +112,7 @@ trait Info extends Controller {
 
     TouchpointBackend.Normal.catalog.map { catalog =>
       Ok(views.html.info.supporterUSA(catalog,
-      PageInfo.default.copy(
+      PageInfo(
         title = CopyConfig.copyTitleSupporters,
         url = request.path,
         description = Some(CopyConfig.copyDescriptionSupporters)),
@@ -123,7 +123,7 @@ trait Info extends Controller {
   def patron() = CachedAction.async { implicit request =>
     implicit val currency = GBP
 
-    val pageInfo = PageInfo.default.copy(
+    val pageInfo = PageInfo(
       title = CopyConfig.copyTitlePatrons,
       url = request.path,
       description = Some(CopyConfig.copyDescriptionPatrons)

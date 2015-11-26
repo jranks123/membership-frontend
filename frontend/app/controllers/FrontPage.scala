@@ -6,6 +6,7 @@ import model._
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Controller
 import services._
+import views.support.PageInfo
 
 trait FrontPage extends Controller {
   val liveEvents: EventbriteService
@@ -183,7 +184,7 @@ trait FrontPage extends Controller {
       )
     )
 
-    Ok(views.html.welcome(PageInfo.default.copy(title = "Welcome", url = request.path), slideShowImages))
+    Ok(views.html.welcome(PageInfo(title = "Welcome", url = request.path), slideShowImages))
   }
 }
 

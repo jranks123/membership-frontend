@@ -97,10 +97,10 @@ trait CommonActions {
       Ok(json).withCookies(Cookie("GU_MEM", GuMemCookie.encodeUserJson(json), secure = true, httpOnly = false))
     }
 
-  case class CheckTierChangeTo(targetTier: PaidTier) extends ActionFilter[AnyMemberTierRequest] {
+  def CheckTierChangeTo(targetTier: PaidTier) = new ActionRefiner[AnyMemberTierRequest, SubscriptionRequest] {
     import model.TierOrdering.upgradeOrdering
 
-    override protected def filter[A](request: AnyMemberTierRequest[A]): Future[Option[Result]] = {
+    override protected def refine[A](request: AnyMemberTierRequest[A]): Future[Either[Result, SubscriptionRequest[A]]] = {
       val subService = request.touchpointBackend.subscriptionService
 
       subService.membershipCatalog.get().zip(
@@ -110,15 +110,15 @@ trait CommonActions {
         val targetCurrencies = catalog.paidTierDetails(targetTier).currencies
 
         if (!sub.isInTrialPeriod && targetCurrencies.contains(sub.accountCurrency) && targetTier > currentTier) {
-          None
+          Right(SubscriptionRequest(sub, request))
         } else {
-          Some(Ok(views.html.tier.upgrade.unavailable(currentTier, targetTier)))
+          Left(Ok(views.html.tier.upgrade.unavailable(currentTier, targetTier)))
         }
       }
     }
   }
 
-  def ChangeToPaidAction(targetTier: PaidTier): ActionBuilder[AnyMemberTierRequest] = MemberAction andThen CheckTierChangeTo(targetTier)
+  def ChangeToPaidAction(targetTier: PaidTier): ActionBuilder[SubscriptionRequest] = MemberAction andThen CheckTierChangeTo(targetTier)
 }
 
 trait OAuthActions extends googleauth.Actions {

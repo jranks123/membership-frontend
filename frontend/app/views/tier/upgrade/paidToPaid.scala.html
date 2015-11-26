@@ -5,12 +5,13 @@
 @import views.support.PaidToPaidUpgradeSummary
 @import views.html.helper.CSRF
 
+@import views.support.PageInfo
 @(
     summary: PaidToPaidUpgradeSummary,
     userFields: com.gu.identity.play.PrivateFields,
-    pageInfo: model.PageInfo,
+    pageInfo: PageInfo,
     flashMessage: Option[model.FlashMessage]
-)(implicit token: play.filters.csrf.CSRF.Token, request: actions.AuthRequest[_])
+)(implicit token: play.filters.csrf.CSRF.Token, request: RequestHeader)
 
 @main("Upgrade to " + summary.target.tier.name, pageInfo=pageInfo) {
       <main role="main" class="page-content l-constrained">

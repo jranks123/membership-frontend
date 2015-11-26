@@ -10,6 +10,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
 import services._
 import tracking.ActivityTracking
+import views.support.PageInfo
 
 trait WhatsOn extends Controller with ActivityTracking {
   implicit val currency = GBP
@@ -35,7 +36,7 @@ trait WhatsOn extends Controller with ActivityTracking {
   }
 
   def list = CachedAction.async { implicit request =>
-    val pageInfo = PageInfo.default.copy(
+    val pageInfo = PageInfo(
       title = CopyConfig.copyTitleEvents,
       url = request.path,
       description = Some(CopyConfig.copyDescriptionEvents)
@@ -64,7 +65,7 @@ trait WhatsOn extends Controller with ActivityTracking {
       CalendarMonthDayGroup("Calendar", groupEventsByDayAndMonth(locationOpt.fold(allEvents)(allEventsByLocation)))
 
     Ok(views.html.event.calendar(
-      PageInfo.default.copy(title = s"${calendarEvents.title} | Events", url = request.path),
+      PageInfo(title = s"${calendarEvents.title} | Events", url = request.path),
       calendarEvents,
       locationFilterItems,
       locationOpt
@@ -76,13 +77,13 @@ trait WhatsOn extends Controller with ActivityTracking {
       CalendarMonthDayGroup("Archive", groupEventsByDayAndMonth(allEventsInArchive)(implicitly[Ordering[LocalDate]].reverse))
 
     Ok(views.html.event.eventsListArchive(
-      PageInfo.default.copy(title = s"${calendarArchive.title} | Events", url = request.path),
+      PageInfo(title = s"${calendarArchive.title} | Events", url = request.path),
       calendarArchive
     ))
   }
 
   def masterclassesList = CachedAction.async { implicit request =>
-    val pageInfo = PageInfo.default.copy(
+    val pageInfo = PageInfo(
       title = CopyConfig.copyTitleMasterclasses,
       url = request.path,
       description = Some(CopyConfig.copyDescriptionMasterclasses)
@@ -94,7 +95,7 @@ trait WhatsOn extends Controller with ActivityTracking {
   }
 
   def masterclassesListFilteredBy(rawTag: String, rawSubTag: String = "") = CachedAction.async { implicit request =>
-    val pageInfo = PageInfo.default.copy(
+    val pageInfo = PageInfo(
       title = CopyConfig.copyTitleMasterclasses,
       url = request.path,
       description = Some(CopyConfig.copyDescriptionMasterclasses)

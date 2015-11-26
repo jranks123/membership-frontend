@@ -1,13 +1,13 @@
 package controllers
 
-import com.gu.i18n.GBP
+import com.gu.i18n.{CountryGroup, Country, GBP}
 import com.gu.identity.play.PrivateFields
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Serializer._
 import com.gu.membership.zuora.soap.models.errors.ResultError
 import forms.MemberForm._
-import model.{FlashMessage, FreeSubscription, PageInfo, PaidSubscription}
+import model.{FlashMessage, FreeSubscription, PaidSubscription}
 import org.joda.time.LocalDate
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
@@ -16,7 +16,8 @@ import play.filters.csrf.CSRF.Token.getToken
 import services._
 import tracking.ActivityTracking
 import utils.CampaignCode.extractCampaignCode
-import views.support.PaidToPaidUpgradeSummary
+import views.support.PageInfo.FormI18n
+import views.support.{PageInfo, PaidToPaidUpgradeSummary}
 
 import scala.concurrent.Future
 
@@ -57,27 +58,42 @@ trait UpgradeTier {
 
   def upgrade(target: PaidTier) = ChangeToPaidAction(target).async { implicit request =>
     val tp = request.touchpointBackend
-    implicit val currency = GBP
+    val sub = request.subscription
+    val stripeKey = Some(tp.stripeService.publicKey)
+    val catalog = request.catalog
+    val currency = sub.accountCurrency
 
     val identityUserFieldsF =
       IdentityService(IdentityApi)
         .getFullUserDetails(request.user, IdentityRequest(request))
         .map(_.privateFields.getOrElse(PrivateFields()))
 
-    val catalog = request.catalog
-    val pageInfo = PageInfo.default.copy(stripePublicKey = Some(tp.stripeService.publicKey))
+    // Preselect the country from Identity fields
+    // but the currency from Zuora account
+    def pageInfo(pf: PrivateFields): PageInfo = {
+      val selectedCountry = pf.billingCountry.orElse(pf.country).flatMap { name =>
+        CountryGroup.countries.find(_.name == name)
+      }
+      val formI18n = FormI18n.lockingCurrency(selectedCountry, currency)
+      PageInfo(formI18n = formI18n, stripePublicKey = stripeKey)
+    }
 
-    def previewFreeUpgrade(subscription: model.FreeSubscription, contact: Contact[FreeTierMember, NoPayment]): Future[Result] =
+    def fromFree(subscription: model.FreeSubscription, contact: Contact[FreeTierMember, NoPayment]): Future[Result] =
       for {
         privateFields <- identityUserFieldsF
         cat <- catalog
       } yield {
         val currentDetails = cat.freeTierDetails(contact.tier)
         val targetDetails = cat.paidTierDetails(target)
-        Ok(views.html.tier.upgrade.freeToPaid(currentDetails, targetDetails, privateFields, pageInfo)(getToken, request.request, currency))
+        Ok(views.html.tier.upgrade.freeToPaid(
+          currentDetails,
+          targetDetails,
+          privateFields,
+          pageInfo(privateFields)
+        )(getToken, request, currency))
       }
 
-    def previewPaidUpgrade(subscription: model.PaidSubscription, contact: Contact[PaidTierMember, StripePayment]): Future[Result] = {
+    def fromPaid(subscription: model.PaidSubscription, contact: Contact[PaidTierMember, StripePayment]): Future[Result] = {
       val stripeCustomerF = tp.stripeService.Customer.read(contact.stripeCustomerId)
 
       for {
@@ -92,21 +108,22 @@ trait UpgradeTier {
         Ok(views.html.tier.upgrade.paidToPaid(
           summary,
           privateFields,
-          pageInfo,
-          flashMsgOpt)(getToken, request.request))
+          pageInfo(privateFields),
+          flashMsgOpt
+        )(getToken, request))
       }
     }
 
-    tp.subscriptionService.currentSubscription(request.member).flatMap { sub =>
-      (sub, request.member) match {
-        case (sub: FreeSubscription, Contact(d, t: FreeTierMember, p: NoPayment)) =>
-          previewFreeUpgrade(sub, Contact(d, t, p))
-        case (sub: PaidSubscription, Contact(d, t: PaidTierMember, p: StripePayment)) =>
-          previewPaidUpgrade(sub, Contact(d, t, p))
-        case _ =>
+    (request.subscription, request.member) match {
+      case (sub: FreeSubscription, Contact(d, t: FreeTierMember, p: NoPayment)) =>
+        fromFree(sub, Contact(d, t, p))
+      case (sub: PaidSubscription, Contact(d, t: PaidTierMember, p: StripePayment)) =>
+        fromPaid(sub, Contact(d, t, p))
+      case _ =>
+        Future {
           val msg = s"Zuora account ${sub.accountId} is inconsistent with its corresponding Salesforce information"
           throw new IllegalStateException(msg)
-      }
+        }
     }
   }
 

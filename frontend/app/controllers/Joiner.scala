@@ -22,6 +22,9 @@ import services.{GuardianContentService, _}
 import services.EventbriteService._
 import tracking.{ActivityTracking, EventActivity, EventData, MemberData}
 import utils.CampaignCode.extractCampaignCode
+import views.support
+import views.support.PageInfo
+import views.support.PageInfo.FormI18n
 
 import scala.concurrent.Future
 
@@ -47,7 +50,7 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
       ((Config.idWebAppUrl / "signin") ? ("returnUrl" -> referer) ? ("skipConfirmation" -> "true")).toString
     }.getOrElse(Config.idWebAppSigninUrl(""))
 
-    val pageInfo = PageInfo.default.copy(
+    val pageInfo = PageInfo(
       title=CopyConfig.copyTitleChooseTier,
       url=request.path,
       description=Some(CopyConfig.copyDescriptionChooseTier),
@@ -90,9 +93,9 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
     } yield {
       val cg = countryGroup
       val paidDetails = catalog.paidTierDetails(tier)
-      val pageInfo = PageInfo.default.copy(
+      val pageInfo = PageInfo(
         stripePublicKey = Some(request.touchpointBackend.stripeService.publicKey),
-        countryGroup = cg
+        formI18n = FormI18n.bindingCurrency(cg)
       )
 
       Ok(views.html.joiner.form.payment(
@@ -118,7 +121,11 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
     for {
       (privateFields, marketingChoices, passwordExists) <- identityDetails(request.user, request)
     } yield {
-      Ok(views.html.joiner.form.friendSignup(privateFields, marketingChoices, passwordExists))
+      Ok(views.html.joiner.form.friendSignup(
+        privateFields,
+        marketingChoices,
+        passwordExists,
+        support.PageInfo().bindingCurrency))
     }
   }
 

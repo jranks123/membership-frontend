@@ -1,11 +1,13 @@
-@import com.gu.i18n.Currency
+@import play.api.mvc.RequestHeader
+@import play.filters.csrf
 @import views.support.DisplayText._
+@import views.support.PageInfo
 @import views.support.Pricing._
 @(currentDetails: model.FreeTierDetails,
   targetDetails: model.PaidTierDetails,
   userFields: com.gu.identity.play.PrivateFields,
-  pageInfo: model.PageInfo
-)(implicit token: play.filters.csrf.CSRF.Token, request: actions.AuthRequest[_], currency: Currency)
+  pageInfo: PageInfo
+)(implicit token: csrf.CSRF.Token, request: RequestHeader)
 
 @import views.html.helper._
 
@@ -44,7 +46,7 @@
                       @fragments.form.addressDetail(
                           "Delivery address",
                           "Once you've joined Guardian Members we'll send you a welcome pack in the post.",
-                          "deliveryAddress", true, userFields.address1, userFields.address2, userFields.address3,
+                          "deliveryAddress", addressRequired = true, userFields.address1, userFields.address2, userFields.address3,
                           userFields.postcode, userFields.address4, userFields.country
                       )
                   </div>
@@ -54,14 +56,14 @@
                       @fragments.form.paymentOptions(targetDetails)
                       @fragments.form.billingAddress("Billing address")
                       @fragments.form.addressDetail(
-                          "", "", "billingAddress", true, userFields.billingAddress1, userFields.billingAddress2,
+                          "", "", "billingAddress", addressRequired = true, userFields.billingAddress1, userFields.billingAddress2,
                           userFields.billingAddress3, userFields.billingPostcode, userFields.billingAddress4,
                           userFields.billingCountry
                       )
                       @fragments.form.cardDetail(targetDetails)
                   </div>
 
-                  @fragments.form.submit(Some(targetDetails.pricingWithFallback))
+                  @fragments.form.submit(targetDetails)
               </div>
           </section>
           </form>

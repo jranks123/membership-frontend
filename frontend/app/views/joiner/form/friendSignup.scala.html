@@ -1,14 +1,16 @@
+@import views.support.PageInfo
 @(
     userFields: com.gu.identity.play.PrivateFields,
     marketingChoices: com.gu.identity.play.StatusFields,
-    passwordExists: Boolean
+    passwordExists: Boolean,
+    pageInfo: PageInfo
 )(implicit token: play.filters.csrf.CSRF.Token)
 
 @import com.gu.membership.salesforce.Tier.Friend
 @import views.html.helper._
 @import views.support.DisplayText._
 
-@main("Become a Friend") {
+@main("Become a Friend", pageInfo) {
 
     <main role="main" class="page-content l-constrained">
 
