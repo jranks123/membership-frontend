@@ -1,12 +1,11 @@
 package views.support
 
 import com.gu.i18n._
-import com.gu.membership.model.{Price, PaidTierPlan, TierPlan}
-import com.gu.membership.salesforce.{PaidTier, Tier}
+import com.gu.membership.model.{PaidTierPlan, TierPlan}
+import com.gu.membership.salesforce.PaidTier
 import model.MembershipCatalog.Val
 import model._
 import play.api.libs.json._
-import play.api.libs.json.{JsNull,Json,JsString,JsValue}
 
 import scalaz.NonEmptyList
 import scalaz.syntax.std.option._
