@@ -1,6 +1,7 @@
 package services
 
 import com.github.nscala_time.time.Imports._
+import com.gu.config.Membership
 import com.gu.i18n.{Currency, GBP}
 import com.gu.membership.model._
 import com.gu.membership.salesforce.Tier._
@@ -19,12 +20,14 @@ import com.gu.membership.zuora.{rest, soap}
 import com.gu.monitoring.ServiceMetrics
 import com.gu.services.PaymentService
 import com.typesafe.scalalogging.LazyLogging
-import configuration.RatePlanIds
 import forms.MemberForm.{PaidMemberJoinForm, JoinForm}
 import model._
 import org.joda.time.DateTime
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import views.support.ThankyouSummary
+import views.support.ThankyouSummary.NextPayment
+import scalaz.syntax.applicative._
+import scalaz.std.option._
 
 import scala.concurrent.Future
 
@@ -101,7 +104,7 @@ object SubscriptionService {
 class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
 			                    val zuoraRestClient: rest.Client,
 			                    val metrics: ServiceMetrics,
-			                    val ratePlanIds: RatePlanIds,
+			                    val productFamily: Membership,
 			                    val bt: BackendType,
 			                    val paymentService: PaymentService) extends LazyLogging {
 
@@ -110,14 +113,14 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
   implicit private val _bt = bt
 
   val membershipCatalog: FutureSupplier[MembershipCatalog] = new FutureSupplier[MembershipCatalog](
-    productRatePlans.map(MembershipCatalog.unsafeFromZuora(ratePlanIds))
+    productRatePlans.map(MembershipCatalog.unsafeFromZuora(productFamily))
   )
 
   def productRatePlans: Future[Seq[rest.ProductRatePlan]] =
     zuoraRestClient.productCatalog.map(_.products.flatMap(_.productRatePlans))
 
   def getMembershipCatalog: Future[MembershipCatalog.Val[MembershipCatalog]] =
-    productRatePlans.map(MembershipCatalog.fromZuora(ratePlanIds))
+    productRatePlans.map(MembershipCatalog.fromZuora(productFamily))
 
   private def subscriptionVersions(subscriptionNumber: String): Future[Seq[Soap.Subscription]] = for {
     subscriptions <- zuoraSoapClient.query[Soap.Subscription](SimpleFilter("Name", subscriptionNumber))
@@ -128,7 +131,7 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
     catalog <- membershipCatalog.get()
     accounts <- zuoraSoapClient.query[Soap.Account](SimpleFilter("crmId", contact.salesforceAccountId))
     accountAndSubscriptionOpts <- Future.traverse(accounts) { account =>
-      zuoraRestClient.latestSubscriptionOpt(ratePlanIds.ids, Set(account.id)).map(account -> _)
+      zuoraRestClient.latestSubscriptionOpt(productFamily.productRatePlanIds, Set(account.id)).map(account -> _)
     }
   } yield {
     val (account, restSub) =
@@ -250,12 +253,12 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
       } yield {
         implicit val currency = sub.accountCurrency
         val (planAmount, bp) = plan(sub)
+        val nextPayment = Some(NextPayment(price(payment.current.price), payment.current.nextPaymentDate))
         ThankyouSummary(
           startDate = payment.current.serviceStartDate,
           amountPaidToday = price(payment.totalPrice),
           planAmount = planAmount,
-          nextPaymentPrice = price(payment.current.price),
-          nextPaymentDate = payment.current.nextPaymentDate,
+          nextPayment = nextPayment,
           renewalDate = payment.current.nextPaymentDate,
           initialFreePeriodOffer = false,
           billingPeriod = bp
@@ -265,18 +268,18 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
     def getSummaryViaPreview =
       for {
         sub <- latestSubF
-        pd <- paymentService.paymentDetails(contact, Set(sub.productRatePlanId))
+        pd <- paymentService.paymentDetails(contact, productFamily)
       } yield {
         implicit val currency = sub.accountCurrency
         val (planAmount, bp) = plan(sub)
         def price(amount: Float) = Price(amount.toInt, sub.accountCurrency)
+        val nextPayment = (pd.nextPaymentPrice.map(price) |@| pd.nextPaymentDate) { NextPayment }
 
         ThankyouSummary(
           startDate = sub.startDate.toDateTimeAtCurrentTime(),
           amountPaidToday = price(0f),
           planAmount = planAmount,
-          nextPaymentPrice = price(pd.nextPaymentPrice),
-          nextPaymentDate = pd.nextPaymentDate,
+          nextPayment = nextPayment,
           renewalDate = pd.termEndDate.plusDays(1),
           sub.isInTrialPeriod,
           bp

@@ -21,8 +21,6 @@ trait User extends Controller {
     Ok(json).withCookies(Cookie("GU_MEM", GuMemCookie.encodeUserJson(json), secure = true, httpOnly = false))
   }
 
-  def meDetails = TODO
-
   def basicDetails(member: Contact[Member, PaymentMethod]) = Json.obj(
     "userId" -> member.identityId,
     "regNumber" -> member.memberStatus.regNumberLabel,

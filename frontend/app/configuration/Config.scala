@@ -2,6 +2,7 @@ package configuration
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.auth.{AWSCredentialsProviderChain, InstanceProfileCredentialsProvider}
+import com.gu.config.Membership
 import com.gu.googleauth.{GoogleAuthConfig, GoogleServiceAccount}
 import com.gu.identity.cookie.{PreProductionKeys, ProductionKeys}
 import com.gu.membership.salesforce.Tier
@@ -170,6 +171,8 @@ object Config {
 
   val casServiceConfig = config.getString("cas.url")
   val zuoraFreeEventTicketsAllowance = config.getInt("zuora.free-event-tickets-allowance")
+
+  val productFamily = Membership.fromConfig(config)
 
   def ratePlanIds(env: String) =
     config.getConfig(s"touchpoint.backend.environments.$env.zuora.ratePlanIds")

@@ -75,14 +75,18 @@
                         <th role="rowheader">Amount paid today</th>
                         <td id="qa-joiner-summary-today">@summary.amountPaidToday.pretty</td>
                     </tr>
-                    <tr role="row">
-                        <th role="rowheader">Next payment</th>
-                        <td id="qa-joiner-summary-next">
+                    @for(payment <- summary.nextPayment) {
+                        <tr role="row">
+                            <th role="rowheader">Next payment</th>
+                            <td id="qa-joiner-summary-next">
                             @if(summary.initialFreePeriodOffer) {
-                                @summary.nextPaymentPrice.pretty (@summary.nextPaymentDate.pretty)
-                            } else { @summary.nextPaymentDate.pretty }
-                        </td>
-                    </tr>
+                                @payment.price.pretty (@payment.date.pretty)
+                            } else {
+                                @payment.date
+                            }
+                            </td>
+                        </tr>
+                    }
                     <tr role="row">
                         <th role="rowheader">
                             @summary.billingPeriod.adjective.capitalize payment

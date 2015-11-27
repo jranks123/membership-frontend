@@ -2,15 +2,16 @@ package views.support
 
 import com.gu.membership.model.{BillingPeriod, Price}
 import org.joda.time.DateTime
+import views.support.ThankyouSummary.NextPayment
 
 case class ThankyouSummary(startDate: DateTime,
                            amountPaidToday: Price,
                            planAmount: Price,
-                           nextPaymentPrice: Price,
-                           nextPaymentDate: DateTime,
+                           nextPayment: Option[NextPayment],
                            renewalDate: DateTime,
                            initialFreePeriodOffer: Boolean,
-                           billingPeriod: BillingPeriod) {
+                           billingPeriod: BillingPeriod)
 
-  require(Set(amountPaidToday, planAmount, nextPaymentPrice).map(_.currency).size == 1)
+object ThankyouSummary {
+  case class NextPayment(price: Price, date: DateTime)
 }

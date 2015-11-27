@@ -1,12 +1,12 @@
 package model
 
+import com.gu.config.Membership
 import com.gu.membership.model._
 import com.gu.membership.salesforce.Tier._
 import com.gu.membership.salesforce.{FreeTier, PaidTier, Tier}
 import com.gu.membership.touchpoint.TouchpointBackendConfig.BackendType
 import com.gu.membership.zuora.rest
 import com.gu.membership.zuora.rest.{PricingSummary, ProductRatePlan, ProductRatePlanCharge}
-import configuration.RatePlanIds
 import model.MembershipCatalog.{MembershipCatalogException, ProductRatePlanId}
 
 import scalaz._
@@ -53,7 +53,7 @@ object MembershipCatalog {
     override def allTierPlanDetails: Seq[TierPlanDetails] = tierPlanDetailsMap.values.toSeq
   }
 
-  def fromZuora(ratePlanIds: RatePlanIds)(ratePlans: Seq[rest.ProductRatePlan])(implicit bt: BackendType): Val[MembershipCatalog] = {
+  def fromZuora(productFamily: Membership)(ratePlans: Seq[rest.ProductRatePlan])(implicit bt: BackendType): Val[MembershipCatalog] = {
     val ratePlansById = ratePlans.map(p => p.id -> p).toMap
     def byId(tierPlan: TierPlan, id: ProductRatePlanId): Val[ProductRatePlan] =
       ratePlansById
@@ -103,7 +103,7 @@ object MembershipCatalog {
       tierDetails.monthlyPlanDetails.currencies == tierDetails.yearlyPlanDetails.currencies
 
     object PublicPlans {
-      val ids = ratePlanIds
+      val ids = productFamily
       val friend = freeTierPlanDetails(FriendTierPlan.current, ids.friend)
       val staff = freeTierPlanDetails(StaffPlan, ids.staff)
       val supporterM = paidTierPlanDetails(PaidTierPlan.monthly(Supporter, Current), ids.supporterMonthly)
@@ -116,7 +116,7 @@ object MembershipCatalog {
     }
 
     object LegacyPlans {
-      val ids = ratePlanIds.legacy
+      val ids = productFamily.legacy
       val friend = freeTierPlanDetails(FriendTierPlan.legacy, ids.friend)
       val supporterM = paidTierPlanDetails(PaidTierPlan.monthly(Supporter, Legacy), ids.supporterMonthly)
       val supporterY = paidTierPlanDetails(PaidTierPlan.yearly(Supporter, Legacy), ids.supporterYearly)
@@ -149,8 +149,8 @@ object MembershipCatalog {
     )(MembershipCatalog.apply)
   }
 
-  def unsafeFromZuora(ratePlanIds: RatePlanIds)(ratePlans: Seq[rest.ProductRatePlan])(implicit bt: BackendType): MembershipCatalog = {
-    fromZuora(ratePlanIds)(ratePlans) match {
+  def unsafeFromZuora(productFamily: Membership)(ratePlans: Seq[rest.ProductRatePlan])(implicit bt: BackendType): MembershipCatalog = {
+    fromZuora(productFamily)(ratePlans) match {
       case Success(catalog) => catalog
       case Failure(errs) =>
         val msg = s"The catalog is inconsistent:\n" + errs.list.map(errorLine).mkString("\n")

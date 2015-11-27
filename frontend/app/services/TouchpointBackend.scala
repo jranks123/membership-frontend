@@ -1,27 +1,27 @@
 package services
 
+import com.gu.config.Membership
 import com.gu.identity.play.IdMinimalUser
-import com.gu.membership.model.FriendTierPlan
-import com.gu.membership.zuora
 import com.gu.membership.salesforce.Contact._
 import com.gu.membership.salesforce.ContactDeserializer.Keys
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.{Stripe, StripeService}
 import com.gu.membership.touchpoint.TouchpointBackendConfig
+import com.gu.membership.zuora
 import com.gu.membership.zuora.soap.ClientWithFeatureSupplier
 import com.gu.membership.zuora.{rest, soap}
 import com.gu.monitoring.{ServiceMetrics, StatusMetrics}
 import com.gu.services.ZuoraPaymentService
 import com.netaporter.uri.Uri
-import configuration.{Config, RatePlanIds}
+import configuration.Config
 import model.{FeatureChoice, MembershipCatalog}
 import monitoring.TouchpointBackendMetrics
+import play.api.Play.current
 import play.api.libs.json.Json
 import play.api.libs.ws.WS
 import play.libs.Akka
 import tracking._
 import utils.TestUsers.isTestUser
-import play.api.Play.current
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -52,7 +52,7 @@ object TouchpointBackend {
 
     val zuoraSoapClient = new ClientWithFeatureSupplier(FeatureChoice.codes, backend.zuoraSoap, backend.zuoraMetrics("zuora-soap-client"), Akka.system())
     val zuoraRestClient = new rest.Client(restBackendConfig, backend.zuoraMetrics("zuora-rest-client"))
-    val ratePlanIds = RatePlanIds.fromConfig(Config.ratePlanIds(restBackendConfig.envName))
+    val ratePlanIds = Membership.fromConfig(Config.ratePlanIds(restBackendConfig.envName))
     val zSubscriptionService = new zuora.SubscriptionService(zuoraSoapClient, zuoraRestClient)
     val paymentService = new ZuoraPaymentService(stripeService, zSubscriptionService)
     val subscriptionService = new SubscriptionService(zuoraSoapClient, zuoraRestClient, backend.zuoraMetrics("zuora-rest-client"), ratePlanIds, backendType, paymentService)
