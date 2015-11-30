@@ -1,5 +1,10 @@
 @import views.support.PageInfo
 @import model.FreeTierDetails
+@import com.gu.i18n.GBP
+@import views.support.CountryWithCurrency
+@import com.gu.membership.salesforce.Tier.Friend
+@import views.html.helper._
+@import views.support.DisplayText._
 
 @(friendTierDetails: FreeTierDetails,
   userFields: com.gu.identity.play.PrivateFields,
@@ -7,10 +12,6 @@
   passwordExists: Boolean,
   pageInfo: PageInfo
 )(implicit token: play.filters.csrf.CSRF.Token)
-
-@import com.gu.membership.salesforce.Tier.Friend
-@import views.html.helper._
-@import views.support.DisplayText._
 
 @main("Become a Friend", pageInfo) {
 
@@ -46,6 +47,7 @@
 
                         @fragments.form.nameDetail(userFields.firstName, userFields.secondName)
                         @fragments.form.addressDetail(
+                            countriesWithCurrencies = CountryWithCurrency.withCurrency(GBP),
                             heading = "Address",
                             note = "Tell us where you live and we'll keep you posted on events happening in your local community.",
                             formType = "deliveryAddress",

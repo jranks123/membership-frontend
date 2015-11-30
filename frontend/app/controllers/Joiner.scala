@@ -5,6 +5,7 @@ import actions._
 import com.github.nscala_time.time.Imports._
 import com.gu.i18n.{CountryGroup, GBP}
 import com.gu.identity.play.{IdMinimalUser, PrivateFields, StatusFields}
+import com.gu.membership.model.Year
 import com.gu.membership.salesforce.Tier.Friend
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
@@ -23,7 +24,7 @@ import services.EventbriteService._
 import tracking.{ActivityTracking, EventActivity, EventData, MemberData}
 import utils.CampaignCode.extractCampaignCode
 import views.support
-import views.support.PageInfo
+import views.support.{CountryWithCurrency, PageInfo}
 import views.support.PageInfo.FormI18n
 
 import scala.concurrent.Future
@@ -50,6 +51,7 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
       ((Config.idWebAppUrl / "signin") ? ("returnUrl" -> referer) ? ("skipConfirmation" -> "true")).toString
     }.getOrElse(Config.idWebAppSigninUrl(""))
 
+    implicit val currency = GBP
     val pageInfo = PageInfo(
       title=CopyConfig.copyTitleChooseTier,
       url=request.path,
@@ -57,7 +59,6 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
       customSignInUrl=Some(signInUrl)
     )
 
-    implicit val currency = countryGroup.currency
     TouchpointBackend.Normal.catalog.map(cat =>
       Ok(views.html.joiner.tierChooser(cat, pageInfo, eventOpt, accessOpt, signInUrl))
         .withSession(request.session.copy(data = request.session.data ++ contentRefererOpt.map(JoinReferrer -> _)))
@@ -95,10 +96,11 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
       val paidDetails = catalog.paidTierDetails(tier)
       val pageInfo = PageInfo(
         stripePublicKey = Some(request.touchpointBackend.stripeService.publicKey),
-        formI18n = FormI18n.bindingCurrency(cg)
+        formI18n = FormI18n(cg.defaultCountry, cg.currency, Year)
       )
 
       Ok(views.html.joiner.form.payment(
+         countriesWithCurrencies = CountryWithCurrency.whitelisted(paidDetails.currencies, GBP),
          details = paidDetails,
          userFields = setCountry(privateFields, cg),
          marketingChoices = marketingChoices,
@@ -127,7 +129,7 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
         privateFields,
         marketingChoices,
         passwordExists,
-        support.PageInfo().bindingCurrency))
+        support.PageInfo()))
     }
   }
 

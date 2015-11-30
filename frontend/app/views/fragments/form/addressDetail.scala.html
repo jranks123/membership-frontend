@@ -1,18 +1,17 @@
-@import com.gu.i18n.{CountryGroup,Country}
+@import com.gu.i18n.Country
 @import views.support.CountryWithCurrency
 
-@(
-    heading: String = "",
-    note: String = "",
-    formType: String,
-    addressRequired: Boolean = true,
-    address1: Option[String],
-    address2: Option[String],
-    town: Option[String],
-    postcode: Option[String],
-    county: Option[String],
-    userCountry: Option[String]
-)
+@(countriesWithCurrencies: List[CountryWithCurrency],
+  formType: String,
+  address1: Option[String],
+  address2: Option[String],
+  town: Option[String],
+  postcode: Option[String],
+  county: Option[String],
+  userCountry: Option[String],
+  addressRequired: Boolean = true,
+  heading: String = "",
+  note: String = "")
 
 @countyOrStateSelect(countyOrStateList: List[String], countyOrStateLabel: String) = {
     <div class="form-field u-h">
@@ -46,7 +45,7 @@
                 class="select js-country"
                 required
                 aria-required="true">
-                @for(cc <- CountryWithCurrency.all) {
+                @for(cc <- countriesWithCurrencies) {
                     <option value="@cc.country.alpha2"
                             data-currency="@cc.currency.toString">@cc.country.name</option>
                 }

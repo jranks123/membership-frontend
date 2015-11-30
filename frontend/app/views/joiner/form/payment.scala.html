@@ -1,7 +1,9 @@
 @import views.html.helper._
 @import views.support.DisplayText._
 @import views.support.PageInfo
+@import views.support.CountryWithCurrency
 @(details: model.PaidTierDetails,
+  countriesWithCurrencies: List[CountryWithCurrency],
   userFields: com.gu.identity.play.PrivateFields,
   marketingChoices: com.gu.identity.play.StatusFields,
   passwordExists: Boolean,
@@ -45,6 +47,7 @@
 
                         @fragments.form.nameDetail(userFields.firstName, userFields.secondName)
                         @fragments.form.addressDetail(
+                            countriesWithCurrencies = countriesWithCurrencies,
                             heading = "Delivery address",
                             note = "Once you've joined Guardian Members we'll send you a welcome pack in the post.",
                             formType = "deliveryAddress",
@@ -69,6 +72,7 @@
 
                         @fragments.form.billingAddress("Billing address")
                         @fragments.form.addressDetail(
+                            countriesWithCurrencies = countriesWithCurrencies,
                             formType = "billingAddress",
                             addressRequired = true,
                             address1 = userFields.billingAddress1,

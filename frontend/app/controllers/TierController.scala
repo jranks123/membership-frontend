@@ -2,6 +2,7 @@ package controllers
 
 import com.gu.i18n.{CountryGroup, GBP}
 import com.gu.identity.play.PrivateFields
+import com.gu.membership.model.{Year, BillingPeriod}
 import com.gu.membership.salesforce._
 import com.gu.membership.stripe.Stripe
 import com.gu.membership.stripe.Stripe.Serializer._
@@ -17,7 +18,7 @@ import services._
 import tracking.ActivityTracking
 import utils.CampaignCode.extractCampaignCode
 import views.support.PageInfo.FormI18n
-import views.support.{PageInfo, PaidToPaidUpgradeSummary}
+import views.support.{CountryWithCurrency, PageInfo, PaidToPaidUpgradeSummary}
 
 import scala.concurrent.Future
 
@@ -62,6 +63,7 @@ trait UpgradeTier {
     val stripeKey = Some(tp.stripeService.publicKey)
     val catalog = request.catalog
     val currency = sub.accountCurrency
+    val countriesWithCurrency = CountryWithCurrency.withCurrency(currency)
 
     val identityUserFieldsF =
       IdentityService(IdentityApi)
@@ -70,11 +72,11 @@ trait UpgradeTier {
 
     // Preselect the country from Identity fields
     // but the currency from Zuora account
-    def pageInfo(pf: PrivateFields): PageInfo = {
+    def pageInfo(pf: PrivateFields, billingPeriod: BillingPeriod): PageInfo = {
       val selectedCountry = pf.billingCountry.orElse(pf.country).flatMap { name =>
         CountryGroup.countries.find(_.name == name)
       }
-      val formI18n = FormI18n.lockingCurrency(selectedCountry, currency)
+      val formI18n = FormI18n(selectedCountry, currency, billingPeriod)
       PageInfo(formI18n = formI18n, stripePublicKey = stripeKey)
     }
 
@@ -88,8 +90,9 @@ trait UpgradeTier {
         Ok(views.html.tier.upgrade.freeToPaid(
           currentDetails,
           targetDetails,
+          countriesWithCurrency,
           privateFields,
-          pageInfo(privateFields)
+          pageInfo(privateFields, Year)
         )(getToken, request))
       }
 
@@ -108,7 +111,7 @@ trait UpgradeTier {
         Ok(views.html.tier.upgrade.paidToPaid(
           summary,
           privateFields,
-          pageInfo(privateFields),
+          pageInfo(privateFields, subscription.plan.billingPeriod),
           flashMsgOpt
         )(getToken, request))
       }

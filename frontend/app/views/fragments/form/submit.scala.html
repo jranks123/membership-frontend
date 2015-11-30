@@ -14,7 +14,7 @@
 @import configuration.Links
 
 @paidButton(price: Price, period: BillingPeriod) = {
-    <span class="is-hidden" data-currency="@price.currency" data-billing-period="@period">Pay @price.pretty</span>
+    <span class="is-hidden" data-currency="@price.currency" data-billing-period="@period.adjective">Pay @price.pretty</span>
 }
 
 <fieldset class="fieldset fieldset--simple">

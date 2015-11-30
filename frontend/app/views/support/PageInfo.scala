@@ -1,9 +1,10 @@
 package views.support
 
 import com.gu.i18n.{Country, CountryGroup, Currency}
+import com.gu.membership.model.{BillingPeriod, Year}
 import configuration.{Config, CopyConfig}
 import model.EventSchema
-import play.api.libs.json.{JsString, JsValue, Json, Writes}
+import play.api.libs.json._
 import views.support.PageInfo.FormI18n
 
 case class PageInfo(title: String = CopyConfig.copyTitleDefault,
@@ -13,27 +14,16 @@ case class PageInfo(title: String = CopyConfig.copyTitleDefault,
                     schemaOpt: Option[EventSchema] = None,
                     customSignInUrl: Option[String] = None,
                     stripePublicKey: Option[String] = None,
-                    formI18n: FormI18n = FormI18n.lockingCurrency(CountryGroup.UK.defaultCountry, CountryGroup.UK.currency)) {
-    def bindingCurrency: PageInfo =
-      copy(
-        formI18n = formI18n.copy(
-          lockCurrency = false
-        )
-      )
+                    formI18n: FormI18n = FormI18n(CountryGroup.UK.defaultCountry, CountryGroup.UK.currency, Year)) {
   }
 
 object PageInfo {
   case class FormI18n(defaultCountry: Option[Country],
-                      currency: Currency,
-                      // Determines whether the currency should vary depending on the selected country
-                      // e.g. set to false during upgrades
-                      lockCurrency: Boolean)
-  object FormI18n {
-    def bindingCurrency(countryGroup: CountryGroup) =
-      FormI18n(countryGroup.defaultCountry, countryGroup.currency, lockCurrency = false)
+                      deliveryCurrency: Currency,
+                      billingPeriod: BillingPeriod)
 
-    def lockingCurrency(country: Option[Country], currency: Currency) =
-      FormI18n(country, currency, lockCurrency = true)
+  implicit val bpWrites = new Writes[BillingPeriod] {
+    override def writes(bp: BillingPeriod): JsValue = JsString(bp.adjective)
   }
 
   implicit val countryWrites = new Writes[Country] {
