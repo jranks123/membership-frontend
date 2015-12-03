@@ -3,7 +3,7 @@ package forms
 import com.gu.i18n._
 import com.gu.membership.model._
 import com.gu.membership.salesforce.PaidTier
-import model.FeatureChoice
+import model.{MembershipCatalog, FeatureChoice}
 import play.api.data.Forms._
 import play.api.data.format.Formatter
 import play.api.data.{Form, FormError, Mapping}
@@ -46,7 +46,6 @@ object MemberForm {
                                ) extends JoinForm {
     override val plan = PaidTierPlan(tier, payment.billingPeriod, Current)
     lazy val zuoraAccountAddress = billingAddress.getOrElse(deliveryAddress)
-    lazy val currencyFromAddress = CountryGroup.byCountryCode(zuoraAccountAddress.country.alpha2).map(_.currency).getOrElse(GBP)
   }
 
   case class AddressDetails(deliveryAddress: Address, billingAddress: Option[Address])

@@ -27,6 +27,8 @@ import utils.TierChangeCookies
 import views.support
 import views.support.{CountryWithCurrency, PageInfo}
 import views.support.PageInfo.CheckoutForm
+import play.api.Play.current
+import play.api.i18n.Messages.Implicits._
 
 import scala.concurrent.Future
 
@@ -168,7 +170,9 @@ trait Joiner extends Controller with ActivityTracking with LazyLogging {
   }
 
   def joinPaid(tier: PaidTier) = AuthenticatedNonMemberAction.async { implicit request =>
-    paidMemberJoinForm.bindFromRequest.fold(redirectToUnsupportedBrowserInfo,
+    paidMemberJoinForm.bindFromRequest.fold({ formWithErrors =>
+        Future.successful(BadRequest(formWithErrors.errorsAsJson))
+      },
       makeMember(tier, Ok(Json.obj("redirect" -> routes.Joiner.thankyou(tier).url))) )
   }
 

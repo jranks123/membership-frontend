@@ -16,7 +16,7 @@ case class PageInfo(title: String = CopyConfig.copyTitleDefault,
                     stripePublicKey: Option[String] = None,
                     initialCheckoutForm: CheckoutForm =
                       CheckoutForm(CountryGroup.UK.defaultCountry, CountryGroup.UK.currency, Year)
-                    )
+                   )
 
 object PageInfo {
   case class CheckoutForm(defaultCountry: Option[Country],

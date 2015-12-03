@@ -28,7 +28,7 @@ define(['$', 'bean', 'src/modules/form/validation/display'], function ($, bean, 
 
     function renderPrices() {
         hideBillingAddress();
-        selectDeliveryCountry()
+        selectDeliveryCountry();
         renderPaymentOptions();
         renderCardDetailsNotes();
         renderSubmitButton();
@@ -36,7 +36,7 @@ define(['$', 'bean', 'src/modules/form/validation/display'], function ($, bean, 
 
     var hasParent = function (elem) {
         return elem.parentNode;
-    }
+    };
 
     function hideBillingAddress() {
         if (!hasParent(BILLING_ADDRESS_EL) && checkoutForm.showBillingAddress) {
@@ -70,12 +70,12 @@ define(['$', 'bean', 'src/modules/form/validation/display'], function ($, bean, 
         });
     }
 
-    function renderCardDetailsNotes(period) {
+    function renderCardDetailsNotes() {
         toArray(CARD_NOTE_CURRENCIES_ELS).forEach(function (el) {
             toggleCurrency(el);
         });
 
-        var attr = 'data-' + period;
+        var attr = 'data-' + checkoutForm.billingPeriod;
         var paymentTakenEl = $(dataCurrencySel(checkoutForm.currency, CARD_NOTE_PRICING_CHARGE), CARD_DETAILS_NOTE_EL)[0];
         var periodEl = $(dataCurrencySel(checkoutForm.currency, CARD_NOTE_PERIOD), CARD_DETAILS_NOTE_EL)[0];
 

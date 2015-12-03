@@ -2,7 +2,7 @@ package services
 
 import com.github.nscala_time.time.Imports._
 import com.gu.config.Membership
-import com.gu.i18n.{Currency, GBP}
+import com.gu.i18n.{CountryGroup, Country, Currency, GBP}
 import com.gu.membership.model._
 import com.gu.membership.salesforce.Tier._
 import com.gu.membership.salesforce.{Contact, ContactId, MemberStatus, PaymentMethod}
@@ -14,6 +14,7 @@ import com.gu.membership.zuora.soap._
 import com.gu.membership.zuora.soap.actions.Actions._
 import com.gu.membership.zuora.soap.actions.subscribe
 import com.gu.membership.zuora.soap.actions.subscribe.Subscribe
+import com.gu.membership.zuora.soap.models.Queries.{PreviewInvoiceItem, Amendment}
 import com.gu.membership.zuora.soap.models.Results._
 import com.gu.membership.zuora.soap.models.{Queries => Soap, _}
 import com.gu.membership.zuora.{rest, soap}
@@ -78,16 +79,16 @@ object SubscriptionService {
    * @param amendments which are returned by the Zurora API in an unpredictable order
    * @return amendments which are sorted by the subscription version number they point to (the sub they amended)
    */
-  def sortAmendments(subscriptions: Seq[Soap.Subscription], amendments: Seq[Soap.Amendment]) = {
+  def sortAmendments(subscriptions: Seq[Soap.Subscription], amendments: Seq[Soap.Amendment]): Seq[Amendment] = {
     val versionsNumberBySubVersionId = subscriptions.map { sub => (sub.id, sub.version) }.toMap
     amendments.sortBy { amendment => versionsNumberBySubVersionId(amendment.subscriptionId) }
   }
 
-  def sortPreviewInvoiceItems(items: Seq[Soap.PreviewInvoiceItem]) = items.sortBy(_.price)
+  def sortPreviewInvoiceItems(items: Seq[Soap.PreviewInvoiceItem]): Seq[PreviewInvoiceItem] = items.sortBy(_.price)
 
-  def sortSubscriptions(subscriptions: Seq[Soap.Subscription]) = subscriptions.sortBy(_.version)
+  def sortSubscriptions(subscriptions: Seq[Soap.Subscription]): Seq[Soap.Subscription] = subscriptions.sortBy(_.version)
 
-   def featuresPerTier(zuoraFeatures: Seq[Soap.Feature])(plan: TierPlan, choice: Set[FeatureChoice]): Seq[Soap.Feature] = {
+  def featuresPerTier(zuoraFeatures: Seq[Soap.Feature])(plan: TierPlan, choice: Set[FeatureChoice]): Seq[Soap.Feature] = {
     def byChoice(choice: Set[FeatureChoice]) =
       zuoraFeatures.filter(f => choice.map(_.zuoraCode).contains(f.code))
 
@@ -97,6 +98,12 @@ object SubscriptionService {
       case _ => Nil
     }
   }
+
+  def supportedAccountCurrency(catalog: MembershipCatalog)(country: Country, plan: PaidTierPlan): Currency =
+    CountryGroup
+      .byCountryCode(country.alpha2).map(_.currency)
+      .filter(catalog.paidTierPlanDetails(plan).currencies)
+      .getOrElse(GBP)
 }
 
 class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
@@ -207,23 +214,25 @@ class SubscriptionService(val zuoraSoapClient: soap.ClientWithFeatureSupplier,
 
   def createPaidSubscription(memberId: ContactId,
                              joinData: PaidMemberJoinForm,
-                             customer: Stripe.Customer): Future[SubscribeResult] = for {
-
-    zuoraFeatures <- zuoraSoapClient.featuresSupplier.get()
-    ratePlanId <- findRatePlanId(joinData.plan)
-    result <- zuoraSoapClient.authenticatedRequest(Subscribe(
-      account = subscribe.Account.stripe(memberId, joinData.currencyFromAddress, autopay = true),
-      paymentMethodOpt = Some(subscribe.CreditCardReferenceTransaction(customer)),
-      ratePlanId = ratePlanId,
-      firstName = joinData.name.first,
-      lastName = joinData.name.last,
-      address = joinData.zuoraAccountAddress,
-      casIdOpt = None,
-      paymentDelay = None,
-      ipAddressOpt = None,
-      featureIds = featuresPerTier(zuoraFeatures)(joinData.plan, joinData.featureChoice).map(_.id))
-    )
-  } yield result
+                             customer: Stripe.Customer): Future[SubscribeResult] =
+    for {
+      catalog <- membershipCatalog.get()
+      zuoraFeatures <- zuoraSoapClient.featuresSupplier.get()
+      ratePlanId <- findRatePlanId(joinData.plan)
+      result <- zuoraSoapClient.authenticatedRequest(Subscribe(
+        account = subscribe.Account.stripe(memberId,
+          currency = supportedAccountCurrency(catalog)(joinData.zuoraAccountAddress.country, joinData.plan),
+          autopay = true),
+        paymentMethodOpt = Some(subscribe.CreditCardReferenceTransaction(customer)),
+        ratePlanId = ratePlanId,
+        firstName = joinData.name.first,
+        lastName = joinData.name.last,
+        address = joinData.zuoraAccountAddress,
+        casIdOpt = None,
+        paymentDelay = None,
+        ipAddressOpt = None,
+        featureIds = featuresPerTier(zuoraFeatures)(joinData.plan, joinData.featureChoice).map(_.id)))
+    } yield result
 
   def getPaymentSummary(memberId: ContactId): Future[PaymentSummary] = {
     for {
