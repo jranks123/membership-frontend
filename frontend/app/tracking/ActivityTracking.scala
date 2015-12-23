@@ -4,7 +4,9 @@ import java.util.{List => JList, Map => JMap}
 
 import com.github.t3hnar.bcrypt._
 import com.gu.identity.play.IdMinimalUser
+import com.gu.membership.PaidMembershipPlan
 import com.gu.membership.model.PaidTierPlan
+import com.gu.memsub.{BillingPeriod, Status}
 import com.gu.salesforce._
 import com.snowplowanalytics.snowplow.tracker.core.emitter.{HttpMethod, RequestMethod}
 import com.snowplowanalytics.snowplow.tracker.emitter.Emitter
@@ -232,7 +234,7 @@ trait ActivityTracking {
   }
 
   def trackUpgrade(member: SFMember,
-                   newRatePlan: PaidTierPlan,
+                   newRatePlan: PaidMembershipPlan[Status, PaidTier, BillingPeriod],
                    addressDetails: Option[AddressDetails]): Unit = {
 
     track(

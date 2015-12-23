@@ -1,6 +1,7 @@
 package services.api
 
 import com.gu.identity.play.IdMinimalUser
+import com.gu.memsub.Subscription.ProductRatePlanId
 import com.gu.memsub.{Paid, Subscription}
 import com.gu.salesforce.{ContactId, PaidTier}
 import com.gu.stripe.Stripe
@@ -22,15 +23,13 @@ trait MemberService {
                    fromEventId: Option[String]): Future[ContactId]
 
   def previewUpgradeSubscription(subscription: Subscription with Paid,
-                                 newTier: PaidTier): Future[Seq[PreviewInvoiceItem]]
+                                 newPlanId: ProductRatePlanId): Future[Seq[PreviewInvoiceItem]]
 
   def upgradeFreeSubscription(freeMember: FreeSFMember,
-                              newTier: PaidTier,
                               form: FreeMemberChangeForm,
                               identityRequest: IdentityRequest): Future[ContactId]
 
   def upgradePaidSubscription(paidMember: PaidSFMember,
-                              newTier: PaidTier,
                               form: PaidMemberChangeForm,
                               identityRequest: IdentityRequest): Future[ContactId]
 
@@ -40,7 +39,7 @@ trait MemberService {
   // TODO: why do we return a String?
   def cancelSubscription(contact: SFMember, user: IdMinimalUser): Future[String]
 
-  def subscriptionUpgradableTo(memberId: SFMember, targetTier: PaidTier): Future[Option[Subscription]]
+  def subscriptionUpgradableTo(memberId: SFMember, newPlanId: ProductRatePlanId): Future[Option[Subscription]]
 
   def updateDefaultCard(member: PaidSFMember, token: String): Future[Stripe.Card]
 

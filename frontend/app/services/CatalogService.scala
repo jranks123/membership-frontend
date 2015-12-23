@@ -6,7 +6,7 @@ import com.gu.membership.MembershipCatalog
 import com.gu.touchpoint.TouchpointBackendConfig.BackendType
 import com.gu.zuora
 import play.api.libs.concurrent.Akka
-import com.gu.memsub.services.{api => commonapi}
+import com.gu.membership.services.{api => commonapi}
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._

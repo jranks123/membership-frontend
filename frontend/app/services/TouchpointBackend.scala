@@ -2,8 +2,9 @@ package services
 
 import com.gu.identity.play.IdMinimalUser
 import com.gu.membership.MembershipCatalog
+import com.gu.membership.services.{api => commonapi}
 import com.gu.memsub
-import com.gu.memsub.services.{PaymentService, api => commonapi}
+import com.gu.memsub.services.PaymentService
 import com.gu.monitoring.{ServiceMetrics, StatusMetrics}
 import com.gu.salesforce._
 import com.gu.stripe.StripeService
@@ -53,7 +54,7 @@ object TouchpointBackend {
     val paymentService = new PaymentService(stripeService, subscriptionService, zuoraService, catalogService)
     val salesforceService = new SalesforceService(backend.salesforce)
     val identityService = IdentityService(IdentityApi)
-    val memberService = new MemberService(identityService, salesforceService, zuoraService, stripeService, catalogService, paymentService)
+    val memberService = new MemberService(identityService, salesforceService, zuoraService, stripeService, subscriptionService, catalogService, paymentService)
 
     TouchpointBackend(salesforceService, stripeService, zuoraSoapClient, zuoraRestClient, memberService, catalogService, zuoraService)
   }
