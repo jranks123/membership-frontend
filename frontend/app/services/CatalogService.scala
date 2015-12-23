@@ -1,29 +1,39 @@
 package services
 
-import com.gu.membership.model.TierPlan
-import com.gu.zuora
-import scala.concurrent.ExecutionContext.Implicits.global
+import akka.agent.Agent
 import com.gu.config.Membership
-import model.MembershipCatalog
-import com.gu.membership.util.FutureSupplier
-import scala.concurrent.Future
+import com.gu.membership.MembershipCatalog
 import com.gu.touchpoint.TouchpointBackendConfig.BackendType
+import com.gu.zuora
+import play.api.libs.concurrent.Akka
+import com.gu.memsub.services.{api => commonapi}
 
-class CatalogService(zuoraRestClient: zuora.rest.Client,
-                     val productFamily: Membership
-                     )(implicit backendType: BackendType) extends api.CatalogService {
-  override val membershipCatalog: FutureSupplier[MembershipCatalog] = new FutureSupplier[MembershipCatalog](
-    productRatePlans.map(MembershipCatalog.unsafeFromZuora(productFamily))
-  )
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-  override def getMembershipCatalog: Future[MembershipCatalog.Val[MembershipCatalog]] =
-    productRatePlans.map(MembershipCatalog.fromZuora(productFamily))
+object CatalogService {
+  def apply(restClient: zuora.rest.Client, productFamily: Membership)(implicit backendType: BackendType): CatalogService = {
+    def makeCatalog: Future[MembershipCatalog] = {
+      restClient.productCatalog.map { catalog =>
+        val productRatePlans = catalog.products.flatMap(_.productRatePlans)
+        MembershipCatalog.fromZuora(productFamily)(productRatePlans).fold(
+          { errs => throw new RuntimeException(
+            s"Failed creating the membership catalog for environment ${backendType.name}: ${errs.list.mkString(", ")}") },
+          identity
+        )
+      }
+    }
 
-  override def findProductRatePlanId(newTierPlan: TierPlan): Future[RatePlanId] = {
-    membershipCatalog.get().map(_.productRatePlanId(newTierPlan))
+    val agent = Agent(Await.result(makeCatalog, 2.minutes))
+    Akka.system.scheduler.schedule(0.milli, 5.minutes)(makeCatalog.map(agent.send))
+    new CatalogService(agent, productFamily)
   }
 
-  private def productRatePlans: Future[Seq[zuora.rest.ProductRatePlan]] =
-    zuoraRestClient.productCatalog.map(_.products.flatMap(_.productRatePlans))
+}
 
+class CatalogService(agent: Agent[MembershipCatalog],
+                     val productFamily: Membership
+                     ) extends commonapi.CatalogService {
+  override def catalog: MembershipCatalog = agent.get
 }

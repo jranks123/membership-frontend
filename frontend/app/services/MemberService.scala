@@ -1,10 +1,9 @@
 package services
 
-import com.github.nscala_time.time.Imports._
 import com.gu.i18n.{Country, CountryGroup, Currency, GBP}
 import com.gu.identity.play.IdMinimalUser
-import com.gu.membership.model._
 import com.gu.membership.util.Timing
+import com.gu.memsub
 import com.gu.memsub.services.api.PaymentService
 import com.gu.salesforce.Tier.{Partner, Patron}
 import com.gu.salesforce.{ContactId, PaidTier}
@@ -27,6 +26,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import tracking._
 import views.support.ThankyouSummary
 import views.support.ThankyouSummary.NextPayment
+import model.PaidSubscription
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -62,7 +62,7 @@ class MemberService(identityService: IdentityService,
 
   private val logger = Logger(getClass)
 
-  override def currentSubscription(contactId: ContactId): Future[model.Subscription] =
+  override def currentSubscription(contactId: ContactId): Future[memsub.Subscription] =
     for {
       cat <- catalogService.membershipCatalog.get()
       accounts <- zuoraService.getAccounts(contactId)
@@ -79,7 +79,7 @@ class MemberService(identityService: IdentityService,
       model.Subscription(cat)(contactId, account, restSub)
     }
 
-  override def currentPaidSubscription(contact: ContactId): Future[model.PaidSubscription] =
+  override def currentPaidSubscription(contact: ContactId): Future[PaidSubscription] =
     currentSubscription(contact).map {
       case paid: PaidSubscription => paid
       case sub =>
