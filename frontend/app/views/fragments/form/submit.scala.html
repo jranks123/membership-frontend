@@ -1,13 +1,14 @@
-@import model.TierDetails
-@import model.FreeTierDetails
-@import model.PaidTierDetails
 @import views.support.Pricing._
-@import com.gu.membership.model.Price
-@import com.gu.membership.model.Year
-@import com.gu.membership.model.Month
+@import com.gu.memsub.Price
+@import com.gu.memsub.BillingPeriod._
 
-@import com.gu.membership.model.BillingPeriod
-@(tierDetails: TierDetails,
+@import com.gu.memsub.BillingPeriod
+@import com.gu.salesforce.Tier
+@import com.gu.membership.MembershipCatalog
+@import com.gu.salesforce.FreeTier
+@import com.gu.salesforce.PaidTier
+@(tier: Tier,
+  catalog: MembershipCatalog,
   membershipTermsAndConditions: Boolean = true,
   isSlim: Boolean = false)
 
@@ -34,12 +35,12 @@
             <button type="button" class="action js-submit-input u-hidden-non-js">
 
 
-                @{tierDetails match {
-                    case _: FreeTierDetails => Html("Join now")
-                    case p: PaidTierDetails =>
+                @{tier match {
+                    case _: FreeTier => Html("Join now")
+                    case p: PaidTier =>
                     for {
-                        pricing <- p.allPricing
-                        (period, price) <- Seq((Year, pricing.yearly), (Month, pricing.monthly))
+                        pricing <- catalog.paidPlans(p).allPricing
+                        (period, price) <- Seq((year, pricing.yearly), (month, pricing.monthly))
                     } yield {
                         paidButton(price, period)
                     }

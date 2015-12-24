@@ -1,22 +1,23 @@
 @import com.gu.i18n.Currency
-@import model.{TierDetails,PaidTierDetails, FreeTierDetails}
 @import views.support.DisplayText._
+@import com.gu.salesforce.Tier
+@import com.gu.salesforce.PaidTier
+@import com.gu.salesforce.FreeTier
 
-@(details: TierDetails)(implicit token: play.filters.csrf.CSRF.Token, currency: Currency)
-
+@(tier: Tier)(implicit token: play.filters.csrf.CSRF.Token, currency: Currency)
 @actionPath = {
-  @details match {
-      case paid: PaidTierDetails => { @routes.TierController.upgrade(paid.tier) }
-      case free: FreeTierDetails => { @routes.TierController.downgradeToFriend() }
+  @tier match {
+      case paid: PaidTier => { @routes.TierController.upgrade(paid) }
+      case free: FreeTier => { @routes.TierController.downgradeToFriend() }
   }
 }
 
-<div class="package-promo--default tone-border-@details.tier.slug">
+<div class="package-promo--default tone-border-@tier.slug">
     <div class="package-promo__header">
         <a class="no-underline minimal-link">
             <div class="package-promo__tier">
                 <div class="package-promo__tier__title">
-                    @fragments.tier.tierTrail(details.tier, showCaption=false)
+                    @fragments.tier.tierTrail(tier, showCaption=false)
                 </div>
             </div>
         </a>
@@ -24,7 +25,7 @@
     <div class="package-promo__content">
         <div class="package-promo__description copy">
             <ul class="o-bulleted-list">
-                @for(highlight <- details.tier.highlights) {
+                @for(highlight <- tier.highlights) {
                     <li>
                         @if(highlight.isNew) {
                             @fragments.inlineIcon("new-arrow", List("icon-inline--badge", "icon-inline--brand"))
@@ -36,15 +37,15 @@
         </div>
         <div class="package-promo__actions">
             <div class="package-promo__actions__pricing">
-            @fragments.pricing.priceInfo(details, currency, canFlex=false)
+            @fragments.pricing.freePriceInfo()
             </div>
             <a class="action u-no-bottom-margin"
-            id="qa-change-tier-@details.tier.slug"
+            id="qa-change-tier-@tier.slug"
             href="@actionPath"
             data-metric-trigger="click"
             data-metric-category="changeTier"
-            data-metric-action="@details.tier.slug">
-                <span class="action__label">Become a @details.tier.name</span>
+            data-metric-action="@tier.slug">
+                <span class="action__label">Become a @tier.name</span>
             </a>
         </div>
     </div>

@@ -1,0 +1,22 @@
+@import views.support.Pricing
+@import com.gu.i18n.Currency
+@import com.gu.salesforce.PaidTier
+
+@(pricing: Pricing, tier: PaidTier, isReversible: Boolean = false, canFlex: Boolean = true)
+<div class="price-info@if(canFlex) { price-info--flex} @if(isReversible) { price-info--@tier.slug}">
+    <div class="price-info__item price-info__item--split">
+        <div class="price-info__detail">
+            <strong class="price-info__value">@pricing.yearly.pretty</strong>
+            <span class="price-info__date">/year</span>
+        </div>
+        @pricing.savingInfo.map { savingMsg =>
+            <div class="price-info__saving">@savingMsg</div>
+        }
+    </div>
+    <div class="price-info__item price-info__item--split price-info__item--last">
+        <div class="price-info__detail price-info__detail--right">
+            <strong class="price-info__value">@pricing.monthly.pretty</strong>
+            <span class="price-info__date">/month</span>
+        </div>
+    </div>
+</div>

@@ -47,10 +47,9 @@ trait DowngradeTier extends ActivityTracking with CatalogProvider
     for {
       // The downgrade is effective at the end of the charge date, so the current tier is still paid
       subscription <- subscriptionService.unsafeGetPaid(request.member)
-      cat <- catalog
     } yield {
       val startDate = subscription.chargedThroughDate.map(_.plusDays(1)).getOrElse(LocalDate.now).toDateTimeAtCurrentTime()
-      Ok(views.html.tier.downgrade.summary(subscription, cat, startDate))
+      Ok(views.html.tier.downgrade.summary(subscription, catalog, startDate))
         .discardingCookies(TierChangeCookies.deletionCookies:_*)
     }
   }

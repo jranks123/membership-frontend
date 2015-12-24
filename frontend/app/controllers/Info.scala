@@ -13,7 +13,7 @@ import scala.concurrent.Future
 
 trait Info extends Controller {
 
-  def supporter = CachedAction.async { implicit request =>
+  def supporter = CachedAction { implicit request =>
     implicit val countryGroup = CountryGroup.UK
 
     val pageImages = Seq(
@@ -57,18 +57,17 @@ trait Info extends Controller {
       )
     )
 
-    TouchpointBackend.Normal.catalog.map { catalog =>
-      Ok(views.html.info.supporter(catalog,
-        PageInfo(
-          title = CopyConfig.copyTitleSupporters,
-          url = request.path,
-          description = Some(CopyConfig.copyDescriptionSupporters)
-        ),
-        pageImages))
-    }
+    Ok(views.html.info.supporter(
+      TouchpointBackend.Normal.catalog,
+      PageInfo(
+        title = CopyConfig.copyTitleSupporters,
+        url = request.path,
+        description = Some(CopyConfig.copyDescriptionSupporters)
+      ),
+      pageImages))
   }
 
-  def supporterUSA = CachedAction.async { implicit request =>
+  def supporterUSA = CachedAction { implicit request =>
     implicit val countryGroup = CountryGroup.US
 
     val pageImages = Seq(
@@ -111,17 +110,16 @@ trait Info extends Controller {
     )
 
 
-    TouchpointBackend.Normal.catalog.map { catalog =>
-      Ok(views.html.info.supporterUSA(catalog.supporter,
+    Ok(views.html.info.supporterUSA(
+      TouchpointBackend.Normal.catalog.supporter,
       PageInfo(
         title = CopyConfig.copyTitleSupporters,
         url = request.path,
         description = Some(CopyConfig.copyDescriptionSupporters)),
       pageImages))
-    }
   }
 
-  def patron() = CachedAction.async { implicit request =>
+  def patron() = CachedAction { implicit request =>
     implicit val currency = GBP
 
     val pageInfo = PageInfo(
@@ -164,21 +162,17 @@ trait Info extends Controller {
       )
     )
 
-    TouchpointBackend.Normal.catalog.map { cat =>
-      Ok(views.html.info.patron(cat, pageInfo, GBP, pageImages))
-    }
+    Ok(views.html.info.patron(TouchpointBackend.Normal.catalog, pageInfo, GBP, pageImages))
   }
 
-  def offersAndCompetitions = CachedAction.async { implicit request =>
+  def offersAndCompetitions = CachedAction { implicit request =>
     implicit val currency = GBP
 
     val results =
       GuardianContentService.offersAndCompetitionsContent.map(ContentItemOffer).filter(item =>
         item.content.fields.map(_("membershipAccess")).isEmpty && ! item.content.webTitle.startsWith("EXPIRED") && item.imgOpt.nonEmpty)
 
-    TouchpointBackend.Normal.catalog.map { cat =>
-      Ok(views.html.info.offersAndCompetitions(cat, results))
-    }
+    Ok(views.html.info.offersAndCompetitions(TouchpointBackend.Normal.catalog, results))
   }
 
   def help = CachedAction { implicit request =>

@@ -1,7 +1,8 @@
 @import configuration.Config
 @import views.support.Dates._
 
-@(subscription: model.PaidSubscription)
+@import com.gu.membership.MembershipCatalog
+@(subscription: model.PaidSubscription)(implicit catalog: MembershipCatalog)
 
 @main("Cancel Tier summary") {
 

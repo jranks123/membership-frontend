@@ -1,5 +1,7 @@
-@import model.MembershipCatalog
+@import com.gu.membership.MembershipCatalog
 @import com.gu.i18n.Currency
+@import com.gu.salesforce.Tier._
+
 @(catalog: MembershipCatalog)(implicit currency: Currency)
 
 <section class="listing listing--basic tone-tint">
@@ -10,13 +12,13 @@
         <div class="listing__content">
             <ul class="grid grid--equal-heights grid--bordered grid--3up-stacked">
                 <li class="grid__item">
-                @fragments.tier.packagePromo(catalog.supporter, currency, isReversed=true)
+                @fragments.tier.packagePromo(supporter, currency, catalog, isReversed=true)
                 </li>
                 <li class="grid__item">
-                @fragments.tier.packagePromo(catalog.partner, currency, isReversed=true)
+                @fragments.tier.packagePromo(partner, currency, catalog, isReversed=true)
                 </li>
                 <li class="grid__item">
-                @fragments.tier.packagePromo(catalog.patron, currency, isReversed=true)
+                @fragments.tier.packagePromo(patron, currency, catalog, isReversed=true)
                 </li>
             </ul>
             @fragments.tier.friendTeaser(catalog)

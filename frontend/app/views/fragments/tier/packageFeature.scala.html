@@ -1,19 +1,20 @@
 @import views.support.DisplayText._
-@import model.PaidTierDetails
 @import com.gu.i18n.CountryGroup
 
-@(details: PaidTierDetails, countryGroup: CountryGroup, isReversed: Boolean = false)
+@import com.gu.salesforce.PaidTier
+@import com.gu.membership.MembershipCatalog
+@(tier: PaidTier, countryGroup: CountryGroup, catalog: MembershipCatalog, isReversed: Boolean = false)
 
 <div class="package-feature">
     <div class="package-feature__promo">
-        @fragments.tier.packagePromo(details, countryGroup.currency, isReversed=isReversed, modifierClass=Some("package-promo--always-narrow"))
+        @fragments.tier.packagePromo(tier, countryGroup.currency, catalog, isReversed=isReversed, modifierClass=Some("package-promo--always-narrow"))
     </div>
     <div class="package-feature__benefits copy">
-        <div class="package-feature__leadin tone-border-@details.tier.slug">
-            @details.tier.leadin
+        <div class="package-feature__leadin tone-border-@tier.slug">
+            @tier.leadin
         </div>
         <ul>
-            @for(benefit <- details.tier.detailsLimited(countryGroup)) {
+            @for(benefit <- tier.detailsLimited(countryGroup)) {
                 <li>@benefit.title</li>
             }
         </ul>

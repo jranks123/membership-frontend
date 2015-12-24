@@ -1,13 +1,13 @@
 @import configuration.Config.idWebAppUrl
-@import model.{MembershipCatalog, PaidSubscription}
+@import com.gu.membership.MembershipCatalog
+@import model.PaidSubscription
 @import org.joda.time.DateTime
 @import views.support.Dates._
-@(
-    subscription: PaidSubscription,
-    catalog: MembershipCatalog,
-    friendTierStartDate: DateTime
-)
-@main(s"Change Tier Summary |  ${catalog.friend.tier.name} from ${subscription.plan.tier.name}") {
+@(subscription: PaidSubscription,
+  friendTierStartDate: DateTime
+)(implicit catalog: MembershipCatalog)
+
+@main(s"Change Tier Summary |  ${catalog.friend.tier.name} from ${catalog.unsafeFind(subscription.productRatePlanId).tier.name}") {
     <main role="main" class="page-content l-constrained">
 
         @subscription.chargedThroughDate.map { endDate =>

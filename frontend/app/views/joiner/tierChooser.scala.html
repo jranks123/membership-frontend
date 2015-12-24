@@ -1,6 +1,6 @@
 @import com.gu.i18n.Currency
 @import com.gu.salesforce.Tier._
-@import model.MembershipCatalog
+@import com.gu.membership.MembershipCatalog
 
 @import views.support.PageInfo
 @(catalog: MembershipCatalog,
@@ -42,16 +42,16 @@
                 </h2>
                 <ul class="grid grid--equal-heights grid--bordered grid--3up-stacked">
                     <li class="grid__item">
-                        @fragments.tier.packagePromo(catalog.friend, currency, Some("#package-benefits-friend"))
+                        @fragments.tier.packagePromo(friend, currency, catalog, Some("#package-benefits-friend"))
                     </li>
                     <li class="grid__item">
-                        @fragments.tier.packagePromo(catalog.supporter, currency, Some("#package-benefits-supporter"))
+                        @fragments.tier.packagePromo(supporter, currency, catalog, Some("#package-benefits-supporter"))
                     </li>
                     <li class="grid__item">
-                        @fragments.tier.packagePromo(catalog.partner, currency, Some("#package-benefits-partner"))
+                        @fragments.tier.packagePromo(partner, currency, catalog, Some("#package-benefits-partner"))
                     </li>
                 </ul>
-                @fragments.tier.packagePromo(catalog.patron, currency, chooseTier = true)
+                @fragments.tier.packagePromo(patron, currency, catalog, chooseTier = true)
             </div>
             @for(event <- eventOpt if accessOpt.isEmpty) {
                 <div class="page-section__supplementary">
@@ -67,16 +67,16 @@
             <div class="page-section__content">
                 <h3 class="h-section">What's included</h3>
                 <div id="package-benefits-friend">
-                    @fragments.tier.packageStack(Friend)
+                    @fragments.tier.packageStack(friend)
                 </div>
                 <div id="package-benefits-supporter">
-                    @fragments.tier.packageStack(Supporter, Some(Friend))
+                    @fragments.tier.packageStack(supporter, Some(friend))
                 </div>
                 <div id="package-benefits-partner">
-                    @fragments.tier.packageStack(Partner, Some(Supporter))
+                    @fragments.tier.packageStack(partner, Some(supporter))
                 </div>
                 <div id="package-benefits-patron">
-                    @fragments.tier.packageStack(Patron, Some(Partner))
+                    @fragments.tier.packageStack(patron, Some(partner))
                 </div>
             </div>
         </section>
