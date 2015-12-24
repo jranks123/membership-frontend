@@ -19,6 +19,7 @@ import monitoring.TouchpointBackendMetrics
 import play.libs.Akka
 import tracking._
 import utils.TestUsers.isTestUser
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 object TouchpointBackend {
 

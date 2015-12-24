@@ -9,7 +9,7 @@ import com.gu.memsub.Subscription.ProductRatePlanId
 import com.gu.memsub._
 import com.gu.memsub.services.api.{PaymentService, SubscriptionService}
 import com.gu.salesforce.Tier.{Partner, Patron}
-import com.gu.salesforce.{ContactId, Tier}
+import com.gu.salesforce.{PaidTier, ContactId, Tier}
 import com.gu.stripe.Stripe.Customer
 import com.gu.stripe.{Stripe, StripeService}
 import com.gu.zuora.api.ZuoraService
@@ -70,7 +70,7 @@ class MemberService(identityService: IdentityService,
                             identityRequest: IdentityRequest,
                             fromEventId: Option[String]): Future[ContactId] = {
 
-    val tier = catalogService.catalog.unsafePlan(formData.planId).tier
+    val tier = catalogService.catalog.unsafeFind(formData.planId).tier
 
     val createContact: Future[ContactId] =
       for {
@@ -104,7 +104,7 @@ class MemberService(identityService: IdentityService,
         identityService.updateUserFieldsBasedOnJoining(user, formData, identityRequest)
 
         salesforceService.metrics.putSignUp(tier)
-        trackRegistration(formData, cId, user)
+        trackRegistration(formData, tier, cId, user)
         cId
       }
     }.andThen {
@@ -203,15 +203,16 @@ class MemberService(identityService: IdentityService,
     } yield result.invoiceItems
   }
 
-  override def subscriptionUpgradableTo(memberId: SFMember, newRatePlanId: ProductRatePlanId): Future[Option[Subscription]] = {
+  override def subscriptionUpgradableTo(memberId: SFMember, tier: PaidTier): Future[Option[Subscription]] = {
     import model.TierOrdering.upgradeOrdering
 
-    subscriptionService.unsafeGetPaid(memberId).map { case sub =>
+    subscriptionService.unsafeGet(memberId).map { case sub =>
       val currentTier = memberId.tier
-      val targetPlan = catalogService.catalog.unsafeFindPaid(newRatePlanId)
-      val targetCurrencies = targetPlan.pricing.prices.map(_.currency).toSet
+      val targetPlan = catalogService.catalog.paidPlans(tier)
+      // The year and month plans are guaranteed to have the same currencies
+      val targetCurrencies = targetPlan.year.pricing.prices.map(_.currency).toSet
 
-      if (!sub.isInTrialPeriod && targetCurrencies.contains(sub.currency) && targetPlan.tier > currentTier) {
+      if (!sub.isInTrialPeriod && targetCurrencies.contains(sub.currency) && tier > currentTier) {
         Some(sub)
       } else None
     }
@@ -382,7 +383,7 @@ class MemberService(identityService: IdentityService,
     def byChoice(choice: Set[FeatureChoice]) =
       zuoraFeatures.filter(f => choice.map(_.zuoraCode).contains(f.code))
 
-    catalogService.catalog.unsafePlan(productRatePlanId).tier match {
+    catalogService.catalog.unsafeFind(productRatePlanId).tier match {
       case patron => byChoice(FeatureChoice.all)
       case partner => byChoice(choice).take(1)
       case _ => Nil

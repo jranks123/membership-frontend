@@ -39,7 +39,7 @@ trait MemberService {
   // TODO: why do we return a String?
   def cancelSubscription(contact: SFMember, user: IdMinimalUser): Future[String]
 
-  def subscriptionUpgradableTo(memberId: SFMember, newPlanId: ProductRatePlanId): Future[Option[Subscription]]
+  def subscriptionUpgradableTo(memberId: SFMember, tier: PaidTier): Future[Option[Subscription]]
 
   def updateDefaultCard(member: PaidSFMember, token: String): Future[Stripe.Card]
 
