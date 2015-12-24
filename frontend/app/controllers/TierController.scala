@@ -2,7 +2,8 @@ package controllers
 
 import com.gu.i18n.{CountryGroup, GBP}
 import com.gu.identity.play.PrivateFields
-import com.gu.membership.model.{BillingPeriod, Year}
+import com.gu.memsub.BillingPeriod
+import com.gu.memsub.BillingPeriod._
 import com.gu.salesforce._
 import com.gu.stripe.Stripe
 import com.gu.stripe.Stripe.Serializer._
@@ -24,15 +25,15 @@ import scala.concurrent.Future
 import scala.language.implicitConversions
 
 trait DowngradeTier extends ActivityTracking with CatalogProvider
+                                             with SubscriptionServiceProvider
                                              with MemberServiceProvider {
   self: TierController =>
 
   def downgradeToFriend() = PaidMemberAction.async { implicit request =>
     for {
-      cat <- catalog
-      subs <- memberService.currentSubscription(request.member)
+      subs <- subscriptionService.unsafeGetPaid(request.member)
     } yield {
-      Ok(views.html.tier.downgrade.confirm(cat.unsafePaidTierPlan(subs.productRatePlanId).tier, cat))
+      Ok(views.html.tier.downgrade.confirm(catalog.unsafeFindPaid(subs.productRatePlanId).tier, catalog))
     }
   }
 
@@ -45,7 +46,7 @@ trait DowngradeTier extends ActivityTracking with CatalogProvider
   def downgradeToFriendSummary = PaidMemberAction.async { implicit request =>
     for {
       // The downgrade is effective at the end of the charge date, so the current tier is still paid
-      subscription <- memberService.currentPaidSubscription(request.member)
+      subscription <- subscriptionService.unsafeGetPaid(request.member)
       cat <- catalog
     } yield {
       val startDate = subscription.chargedThroughDate.map(_.plusDays(1)).getOrElse(LocalDate.now).toDateTimeAtCurrentTime()
@@ -61,8 +62,9 @@ trait UpgradeTier extends StripeServiceProvider {
   def upgrade(target: PaidTier) = ChangeToPaidAction(target).async { implicit request =>
     val sub = request.subscription
     val stripeKey = Some(stripeService.publicKey)
-    val currency = sub.accountCurrency
+    val currency = sub.currency
     val countriesWithCurrency = CountryWithCurrency.withCurrency(currency)
+    val targetPlans = catalog.paidPlans(target)
 
     val identityUserFieldsF =
       IdentityService(IdentityApi)
@@ -79,32 +81,31 @@ trait UpgradeTier extends StripeServiceProvider {
       PageInfo(initialCheckoutForm = formI18n, stripePublicKey = stripeKey)
     }
 
-    def fromFree(subscription: model.FreeSubscription, contact: Contact[FreeTierMember, NoPayment]): Future[Result] =
+    def fromFree(subscription: FreeSubscription, contact: Contact[FreeTierMember, NoPayment]): Future[Result] =
       for {
         privateFields <- identityUserFieldsF
-        cat <- catalog
       } yield {
-        val currentDetails = cat.freeTierDetails(contact.tier)
-        val targetDetails = cat.paidTierDetails(target)
+        val currentPlan = catalog.freePlan(contact.tier)
         Ok(views.html.tier.upgrade.freeToPaid(
-          currentDetails,
-          targetDetails,
+          currentPlan,
+          targetPlans.year,
           countriesWithCurrency,
           privateFields,
-          pageInfo(privateFields, Year)
+          pageInfo(privateFields, year)
         )(getToken, request))
       }
 
-    def fromPaid(subscription: model.PaidSubscription, contact: Contact[PaidTierMember, StripePayment]): Future[Result] = {
+    def fromPaid(subscription: PaidSubscription, contact: Contact[PaidTierMember, StripePayment]): Future[Result] = {
       val stripeCustomerF = stripeService.Customer.read(contact.stripeCustomerId)
+      val targetPlanId = targetPlans.get(subscription.plan.billingPeriod).productRatePlanId
 
       for {
-        previewItems <- memberService.previewUpgradeSubscription(subscription, target)
-        cat <- catalog
+        previewItems <- memberService.previewUpgradeSubscription(
+          subscription, targetPlanId)
         customer <- stripeCustomerF
         privateFields <- identityUserFieldsF
       } yield {
-        val summary = PaidToPaidUpgradeSummary(cat, previewItems, subscription, target, customer.card)
+        val summary = PaidToPaidUpgradeSummary(previewItems, subscription, targetPlanId, customer.card)
         val flashMsgOpt = request.flash.get("error").map(FlashMessage.error)
 
         Ok(views.html.tier.upgrade.paidToPaid(
@@ -133,7 +134,7 @@ trait UpgradeTier extends StripeServiceProvider {
     val identityRequest = IdentityRequest(request)
 
     def handleFree(freeMember: FreeSFMember)(form: FreeMemberChangeForm) = for {
-      memberId <- memberService.upgradeFreeSubscription(freeMember, target, form, identityRequest)
+      memberId <- memberService.upgradeFreeSubscription(freeMember, form, identityRequest)
     } yield Ok(Json.obj("redirect" -> routes.TierController.upgradeThankyou(target).url))
 
     def handlePaid(paidMember: PaidSFMember)(form: PaidMemberChangeForm) = {
@@ -144,7 +145,7 @@ trait UpgradeTier extends StripeServiceProvider {
       }
 
       def doUpgrade(): Future[Result] = {
-        memberService.upgradePaidSubscription(paidMember, target, form, identityRequest).map {
+        memberService.upgradePaidSubscription(paidMember, form, identityRequest).map {
           _ => Redirect(routes.TierController.upgradeThankyou(target))
         }
       }
@@ -175,10 +176,8 @@ trait UpgradeTier extends StripeServiceProvider {
 trait CancelTier extends CatalogProvider {
   self: TierController =>
 
-  def cancelTier() = MemberAction.async { implicit request =>
-    catalog.map { catalog =>
-      Ok(views.html.tier.cancel.confirm(request.member.tier, catalog))
-    }
+  def cancelTier() = MemberAction { implicit request =>
+    Ok(views.html.tier.cancel.confirm(request.member.tier, catalog))
   }
 
   def cancelTierConfirm() = MemberAction.async { implicit request =>
@@ -195,7 +194,7 @@ trait CancelTier extends CatalogProvider {
   )
 
   def cancelPaidTierSummary = PaidMemberAction.async { implicit request =>
-    memberService.currentPaidSubscription(request.member).map { sub =>
+    subscriptionService.unsafeGetPaid(request.member).map { sub =>
       Ok(views.html.tier.cancel.summaryPaid(sub))
         .discardingCookies(TierChangeCookies.deletionCookies:_*)
     }
@@ -203,13 +202,9 @@ trait CancelTier extends CatalogProvider {
 }
 
 trait TierController extends Controller with UpgradeTier with DowngradeTier with CancelTier {
-  def change() = MemberAction.async { implicit request =>
+  def change() = MemberAction { implicit request =>
     implicit val currency = GBP
-    for {
-      cat <- catalog
-    } yield {
-      Ok(views.html.tier.change(request.member.tier, cat))
-    }
+    Ok(views.html.tier.change(request.member.tier, catalog))
   }
 }
 

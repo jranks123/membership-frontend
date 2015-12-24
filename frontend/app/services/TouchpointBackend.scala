@@ -1,14 +1,17 @@
 package services
 
+import com.gu.config.Membership
 import com.gu.identity.play.IdMinimalUser
 import com.gu.membership.MembershipCatalog
-import com.gu.membership.services.{api => commonapi}
+import com.gu.membership.services.{api => memapi}
+import com.gu.memsub.services.{api => memsubapi}
 import com.gu.memsub
 import com.gu.memsub.services.PaymentService
 import com.gu.monitoring.{ServiceMetrics, StatusMetrics}
 import com.gu.salesforce._
 import com.gu.stripe.StripeService
 import com.gu.touchpoint.TouchpointBackendConfig
+import com.gu.touchpoint.TouchpointBackendConfig.BackendType
 import com.gu.zuora.api.ZuoraService
 import com.gu.zuora.soap.ClientWithFeatureSupplier
 import com.gu.zuora.{ZuoraService => ZuoraServiceImpl, rest, soap}
@@ -57,7 +60,18 @@ object TouchpointBackend {
     val identityService = IdentityService(IdentityApi)
     val memberService = new MemberService(identityService, salesforceService, zuoraService, stripeService, subscriptionService, catalogService, paymentService)
 
-    TouchpointBackend(salesforceService, stripeService, zuoraSoapClient, zuoraRestClient, memberService, catalogService, zuoraService)
+    TouchpointBackend(
+      salesforceService = salesforceService,
+      stripeService = stripeService,
+      zuoraSoapClient = zuoraSoapClient,
+      zuoraRestClient = zuoraRestClient,
+      memberService = memberService,
+      subscriptionService = subscriptionService,
+      catalogService = catalogService,
+      zuoraService = zuoraService,
+      productFamily = productFamily,
+      backendType = _bt
+    )
   }
 
   val Normal = TouchpointBackend(BackendType.Default)
@@ -75,8 +89,11 @@ case class TouchpointBackend(salesforceService: api.SalesforceService,
                              zuoraSoapClient: soap.ClientWithFeatureSupplier,
                              zuoraRestClient: rest.Client,
                              memberService: api.MemberService,
-                             catalogService: commonapi.CatalogService,
-                             zuoraService: ZuoraService) extends ActivityTracking {
+                             subscriptionService: memsubapi.SubscriptionService,
+                             catalogService: memapi.CatalogService,
+                             zuoraService: ZuoraService,
+                             productFamily: Membership,
+                             backendType: BackendType) extends ActivityTracking {
 
   def catalog: MembershipCatalog = catalogService.catalog
 }

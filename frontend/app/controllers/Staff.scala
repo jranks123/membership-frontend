@@ -2,7 +2,7 @@ package controllers
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.Controller
-import services.{GuardianLiveEventService, LocalEventService, MasterclassEventService, TouchpointBackend, api}
+import services._
 import views.support.Catalog
 
 trait Staff extends Controller {
@@ -27,8 +27,9 @@ trait Staff extends Controller {
   }
 
   def catalogDiagnostics = GoogleAuthenticatedStaffAction.async { implicit request =>
-    val testCat = TouchpointBackend.TestUser.catalogService.getMembershipCatalog
-    val normalCat = TouchpointBackend.Normal.catalogService.getMembershipCatalog
+    val Seq(testCat, normalCat) = Seq(TouchpointBackend.TestUser, TouchpointBackend.Normal).map { be =>
+      CatalogService.makeCatalog(be.zuoraRestClient, be.productFamily)(be.backendType)
+    }
 
     testCat.zip(normalCat).map((Catalog.Diagnostic.fromCatalogs _).tupled).map { diagnostic =>
       Ok(views.html.staff.catalogDiagnostic(diagnostic))
