@@ -1,19 +1,22 @@
 package model
 
-import com.gu.membership.MembershipCatalog
-import com.gu.memsub.Subscription
+import com.gu.membership.{FreeMembershipPlan, PaidMembershipPlan, MembershipPlan, MembershipCatalog}
+import com.gu.memsub.{BillingPeriod, Status, Subscription}
 import com.gu.salesforce.{FreeTier, PaidTier, Tier}
 
 object SubscriptionOps {
   implicit class WithTier(subscription: Subscription) {
-    def tier(implicit catalog: MembershipCatalog): Tier =
-      catalog.unsafeFind(subscription.productRatePlanId).tier
-
-    def paidTier(implicit catalog: MembershipCatalog): PaidTier =
-      catalog.unsafeFindPaid(subscription.productRatePlanId).tier
-
-    def freeTier(implicit catalog: MembershipCatalog): FreeTier =
-      catalog.unsafeFindFree(subscription.productRatePlanId).tier
+    def plan(implicit catalog: MembershipCatalog): MembershipPlan[Status, Tier] =
+      catalog.unsafeFind(subscription.productRatePlanId)
   }
 
+  implicit class WithPaidTIer(subscription: PaidSubscription) {
+    def paidPlan(implicit catalog: MembershipCatalog): PaidMembershipPlan[Status, PaidTier, BillingPeriod] =
+      catalog.unsafeFindPaid(subscription.productRatePlanId)
+  }
+
+  implicit class WithFreePlan(subscription: FreeSubscription) {
+    def freePlan(implicit catalog: MembershipCatalog): FreeMembershipPlan[Status, FreeTier] =
+      catalog.unsafeFindFree(subscription.productRatePlanId)
+  }
 }

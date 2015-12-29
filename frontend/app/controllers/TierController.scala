@@ -20,6 +20,7 @@ import tracking.ActivityTracking
 import utils.TierChangeCookies
 import views.support.PageInfo.CheckoutForm
 import views.support.{CountryWithCurrency, PageInfo, PaidToPaidUpgradeSummary}
+import SubscriptionOps._
 
 import scala.concurrent.Future
 import scala.language.implicitConversions
@@ -46,10 +47,11 @@ trait DowngradeTier extends ActivityTracking with CatalogProvider
   def downgradeToFriendSummary = PaidMemberAction.async { implicit request =>
     for {
       // The downgrade is effective at the end of the charge date, so the current tier is still paid
-      subscription <- subscriptionService.unsafeGetPaid(request.member)
+      sub <- subscriptionService.unsafeGetPaid(request.member)
     } yield {
-      val startDate = subscription.chargedThroughDate.map(_.plusDays(1)).getOrElse(LocalDate.now).toDateTimeAtCurrentTime()
-      Ok(views.html.tier.downgrade.summary(subscription, catalog, startDate))
+      val startDate = sub.chargedThroughDate.map(_.plusDays(1)).getOrElse(LocalDate.now).toDateTimeAtCurrentTime()
+      implicit val c = catalog
+      Ok(views.html.tier.downgrade.summary(sub, sub.paidPlan, catalog.friend, startDate))
         .discardingCookies(TierChangeCookies.deletionCookies:_*)
     }
   }
@@ -193,8 +195,9 @@ trait CancelTier extends CatalogProvider {
   )
 
   def cancelPaidTierSummary = PaidMemberAction.async { implicit request =>
+    implicit val c = catalog
     subscriptionService.unsafeGetPaid(request.member).map { sub =>
-      Ok(views.html.tier.cancel.summaryPaid(sub))
+      Ok(views.html.tier.cancel.summaryPaid(sub, sub.paidPlan.tier))
         .discardingCookies(TierChangeCookies.deletionCookies:_*)
     }
   }

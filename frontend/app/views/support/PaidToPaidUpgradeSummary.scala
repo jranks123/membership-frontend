@@ -45,7 +45,7 @@ object PaidToPaidUpgradeSummary {
 
     val currentSummary =
       CurrentSummary(
-        tier = sub.paidTier,
+        tier = sub.paidPlan.tier,
         startDate = sub.startDate,
         payment = sub.recurringPrice,
         card = card

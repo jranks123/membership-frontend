@@ -3,11 +3,21 @@
 @import model.PaidSubscription
 @import org.joda.time.DateTime
 @import views.support.Dates._
-@(subscription: PaidSubscription,
-  friendTierStartDate: DateTime
-)(implicit catalog: MembershipCatalog)
+@import com.gu.membership.PaidMembershipPlan
+@import com.gu.salesforce.PaidTier
+@import com.gu.memsub.BillingPeriod
+@import com.gu.memsub.Status
 
-@main(s"Change Tier Summary |  ${catalog.friend.tier.name} from ${catalog.unsafeFind(subscription.productRatePlanId).tier.name}") {
+@import com.gu.membership.FreeMembershipPlan
+@import com.gu.salesforce.Tier.Friend
+@import com.gu.memsub.Current
+@(subscription: PaidSubscription,
+  currentPlan: PaidMembershipPlan[Status, PaidTier, BillingPeriod],
+  friendPlan: FreeMembershipPlan[Current, Friend],
+  friendTierStartDate: DateTime
+)
+
+@main(s"Change Tier Summary |  ${friendPlan.tier.name} from ${currentPlan.tier.name}") {
     <main role="main" class="page-content l-constrained">
 
         @subscription.chargedThroughDate.map { endDate =>
@@ -19,7 +29,7 @@
                 <h2 class="page-section__headline">Current Membership summary</h2>
             </div>
             <div class="page-section__content">
-                @fragments.tier.summary(subscription)
+                @fragments.tier.summary(subscription, currentPlan.tier)
             </div>
         </section>
 
@@ -34,7 +44,7 @@
                             Tier
                         </th>
                         <td id="qa-downgrade-summary-tier">
-                            @catalog.friend.tier.name
+                            @friendPlan.tier.name
                         </td>
                     </tr>
                     <tr role="row">

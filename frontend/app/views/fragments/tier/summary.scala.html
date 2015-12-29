@@ -2,8 +2,8 @@
 @import org.joda.time.DateTime
 @import model.SubscriptionOps._
 
-@import com.gu.membership.MembershipCatalog
-@(subscription: model.PaidSubscription)(implicit catalog: MembershipCatalog)
+@import com.gu.salesforce.Tier
+@(subscription: model.PaidSubscription, tier: Tier)
 
 <table class="table table--striped" role="grid">
     <tr role="row">
@@ -11,7 +11,7 @@
             Tier
         </th>
         <td id="qa-tier-summary-tier">
-            @subscription.tier.name
+            @tier.name
         </td>
     </tr>
 

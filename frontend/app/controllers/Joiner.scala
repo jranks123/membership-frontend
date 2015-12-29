@@ -137,7 +137,7 @@ object Joiner extends Controller with ActivityTracking
 
   def joinFriend = AuthenticatedNonMemberAction.async { implicit request =>
     friendJoinForm.bindFromRequest.fold(redirectToUnsupportedBrowserInfo,
-      makeMember(Tier.friend, Redirect(routes.Joiner.thankyou(Tier.Friend))) )
+      makeMember(Tier.friend, Redirect(routes.Joiner.thankyou(Tier.friend))) )
   }
 
   def joinStaff = AuthenticatedNonMemberAction.async { implicit request =>
