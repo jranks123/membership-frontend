@@ -26,10 +26,12 @@ trait MemberService {
                                  newPlanId: ProductRatePlanId): Future[Seq[PreviewInvoiceItem]]
 
   def upgradeFreeSubscription(freeMember: FreeSFMember,
+                              newTier: PaidTier,
                               form: FreeMemberChangeForm,
                               identityRequest: IdentityRequest): Future[ContactId]
 
   def upgradePaidSubscription(paidMember: PaidSFMember,
+                              newTier: PaidTier,
                               form: PaidMemberChangeForm,
                               identityRequest: IdentityRequest): Future[ContactId]
 

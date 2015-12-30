@@ -62,6 +62,7 @@ class MemberService(identityService: IdentityService,
 
   import EventbriteService._
   import MemberService.featureIdsForTier
+  implicit def catalog = catalogService.catalog
 
   private val logger = Logger(getClass)
 
@@ -70,7 +71,7 @@ class MemberService(identityService: IdentityService,
                             identityRequest: IdentityRequest,
                             fromEventId: Option[String]): Future[ContactId] = {
 
-    val tier = catalogService.catalog.unsafeFind(formData.planId).tier
+    val tier = formData.planChoice.tier
 
     val createContact: Future[ContactId] =
       for {
@@ -123,32 +124,43 @@ class MemberService(identityService: IdentityService,
   }
 
   override def upgradeFreeSubscription(freeMember: FreeSFMember,
+                                       newTier: PaidTier,
                                        form: FreeMemberChangeForm,
                                        identityRequest: IdentityRequest): Future[ContactId] = {
     for {
       customer <- stripeService.Customer.create(freeMember.identityId, form.payment.token)
       paymentResult <- createPaymentMethod(freeMember, customer)
-      memberId <- upgradeSubscription(freeMember, form, Some(customer), identityRequest)
-    } yield {
-
-      memberId
-    }
+      memberId <- upgradeSubscription(
+        member = freeMember,
+        planChoice = PaidPlanChoice(newTier, form.payment.billingPeriod),
+        form = form,
+        customerOpt = Some(customer),
+        identityRequest = identityRequest
+      )
+    } yield memberId
   }
 
   override def upgradePaidSubscription(paidMember: PaidSFMember,
+                                       newTier: PaidTier,
                                        form: PaidMemberChangeForm,
                                        identityRequest: IdentityRequest): Future[ContactId] =
     for {
       subs <- subscriptionService.unsafeGetPaid(paidMember)
-      currentPlan = catalogService.catalog.unsafeFindPaid(subs.productRatePlanId)
-      memberId <- upgradeSubscription(paidMember, form, None, identityRequest)
+      currentPlan = catalog.unsafeFindPaid(subs.productRatePlanId)
+      memberId <- upgradeSubscription(
+        member = paidMember,
+        planChoice = PaidPlanChoice(newTier, currentPlan.billingPeriod),
+        form = form,
+        customerOpt = None,
+        identityRequest = identityRequest
+      )
     } yield memberId
 
   override def downgradeSubscription(contact: SFMember, user: IdMinimalUser): Future[String] = {
     //if the member has paid upfront so they should have the higher tier until charged date has completed then be downgraded
     //otherwise use customer acceptance date (which should be in the future)
     def effectiveFrom(sub: model.PaidSubscription): DateTime = sub.chargedThroughDate.getOrElse(sub.firstPaymentDate).toDateTimeAtCurrentTime
-    val friendRatePlanId = catalogService.catalog.friend.productRatePlanId
+    val friendRatePlanId = catalog.friend.productRatePlanId
 
     for {
       sub <- subWithNoPendingAmend(contact)
@@ -208,7 +220,7 @@ class MemberService(identityService: IdentityService,
 
     subscriptionService.unsafeGet(memberId).map { case sub =>
       val currentTier = memberId.tier
-      val targetPlan = catalogService.catalog.paidPlans(tier)
+      val targetPlan = catalog.paidPlans(tier)
       // The year and month plans are guaranteed to have the same currencies
       val targetCurrencies = targetPlan.year.pricing.prices.map(_.currency).toSet
 
@@ -345,7 +357,7 @@ class MemberService(identityService: IdentityService,
       result <- zuoraService.createSubscription(
         subscribeAccount = SoapSubscribeAccount.stripe(contactId, GBP, autopay = false),
         paymentMethod = None,
-        productRatePlanId = joinData.planId,
+        productRatePlanId = joinData.planChoice.productRatePlanId,
         name = joinData.name,
         address = joinData.deliveryAddress
       )
@@ -358,16 +370,17 @@ class MemberService(identityService: IdentityService,
                                       customer: Stripe.Customer): Future[SubscribeResult] =
     for {
       zuoraFeatures <- zuoraService.getFeatures
+      planId = joinData.planChoice.productRatePlanId
       result <- zuoraService.createSubscription(
         subscribeAccount = SoapSubscribeAccount.stripe(
           contactId = contactId,
-          currency = supportedAccountCurrency(catalogService.catalog)(joinData.zuoraAccountAddress.country, joinData.planId),
+          currency = supportedAccountCurrency(catalog)(joinData.zuoraAccountAddress.country, planId),
           autopay = true),
         paymentMethod = Some(CreditCardReferenceTransaction(customer)),
-        productRatePlanId = joinData.planId,
+        productRatePlanId = planId,
         name = joinData.name,
         address = joinData.zuoraAccountAddress,
-        featureIds = featuresPerTier(zuoraFeatures)(joinData.planId, joinData.featureChoice).map(_.id)
+        featureIds = featuresPerTier(zuoraFeatures)(planId, joinData.featureChoice).map(_.id)
       )
     } yield result
 
@@ -400,12 +413,13 @@ class MemberService(identityService: IdentityService,
   }
 
   private def upgradeSubscription(member: SFMember,
+                                  planChoice: PlanChoice,
                                   form: MemberChangeForm,
                                   customerOpt: Option[Customer],
                                   identityRequest: IdentityRequest): Future[ContactId] = {
     val addressDetails = form.addressDetails
-    val plan = catalogService.catalog.unsafeFindPaid(form.planId)
-    val tier = plan.tier
+    val newPlan = catalogService.catalog.unsafeFindPaid(planChoice.productRatePlanId)
+    val tier = newPlan.tier
 
     addressDetails.foreach(
       identityService.updateUserFieldsBasedOnUpgrade(member.identityId, _, identityRequest))
@@ -416,10 +430,10 @@ class MemberService(identityService: IdentityService,
       featureIds <- zuoraService.getFeatures.map { fs =>
         featureIdsForTier(fs)(tier, form.featureChoice)
       }
-      _ <- zuoraService.upgradeSubscription(sub, form.planId, featureIds, preview = false)
+      _ <- zuoraService.upgradeSubscription(sub, newPlan.productRatePlanId, featureIds, preview = false)
     } yield {
       salesforceService.metrics.putUpgrade(tier)
-      trackUpgrade(member, plan, addressDetails)
+      trackUpgrade(member, newPlan, addressDetails)
       member
     }
   }

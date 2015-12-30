@@ -135,7 +135,7 @@ trait UpgradeTier extends StripeServiceProvider with CatalogProvider {
     val identityRequest = IdentityRequest(request)
 
     def handleFree(freeMember: FreeSFMember)(form: FreeMemberChangeForm) = for {
-      memberId <- memberService.upgradeFreeSubscription(freeMember, form, identityRequest)
+      memberId <- memberService.upgradeFreeSubscription(freeMember, target, form, identityRequest)
     } yield Ok(Json.obj("redirect" -> routes.TierController.upgradeThankyou(target).url))
 
     def handlePaid(paidMember: PaidSFMember)(form: PaidMemberChangeForm) = {
@@ -146,7 +146,7 @@ trait UpgradeTier extends StripeServiceProvider with CatalogProvider {
       }
 
       def doUpgrade(): Future[Result] = {
-        memberService.upgradePaidSubscription(paidMember, form, identityRequest).map {
+        memberService.upgradePaidSubscription(paidMember, target, form, identityRequest).map {
           _ => Redirect(routes.TierController.upgradeThankyou(target))
         }
       }
