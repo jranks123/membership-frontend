@@ -11,9 +11,9 @@
 @import com.gu.salesforce.PaidTier
 
 @import com.gu.membership.MembershipCatalog
+@import views.support.PaidPlans
 @(currentPlan: MembershipPlan[Status, Friend],
   targetPlans: PaidMembershipPlans[Current, PaidTier],
-  catalog: MembershipCatalog,
   countriesWithCurrency: List[CountryWithCurrency],
   userFields: com.gu.identity.play.PrivateFields,
   pageInfo: PageInfo
@@ -88,7 +88,7 @@
                       @fragments.form.cardDetail(targetPlans)
                   </div>
 
-                  @fragments.form.submit(targetPlans.tier, catalog)
+                  @fragments.form.submit(PaidPlans(targetPlans))
               </div>
           </section>
           </form>

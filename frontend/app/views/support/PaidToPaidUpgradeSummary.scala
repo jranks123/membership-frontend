@@ -59,6 +59,7 @@ object PaidToPaidUpgradeSummary {
         nextPaymentDate = billingPeriod match {
           case Year() => LocalDate.now().plusYears(1)
           case Month() => LocalDate.now().plusMonths(1)
+          case _ => throw new IllegalStateException(s"Unreachable code: the plan ${plan.productRatePlanId} was expected to be either yearly or monthly")
         }
       )
 

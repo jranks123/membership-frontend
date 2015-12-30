@@ -4,7 +4,6 @@ import com.gu.i18n.{CountryGroup, GBP}
 import configuration.CopyConfig
 import forms.MemberForm._
 import model._
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Controller
 import services.{AuthenticationService, EmailService, GuardianContentService, TouchpointBackend}
 import views.support.{Asset, PageInfo}
@@ -58,7 +57,7 @@ trait Info extends Controller {
     )
 
     Ok(views.html.info.supporter(
-      TouchpointBackend.Normal.catalog,
+      TouchpointBackend.Normal.catalog.supporter,
       PageInfo(
         title = CopyConfig.copyTitleSupporters,
         url = request.path,
@@ -162,7 +161,13 @@ trait Info extends Controller {
       )
     )
 
-    Ok(views.html.info.patron(TouchpointBackend.Normal.catalog, pageInfo, GBP, pageImages))
+    Ok(views.html.info.patron(
+      patronPlans = TouchpointBackend.Normal.catalog.patron,
+      partnerPlans = TouchpointBackend.Normal.catalog.partner,
+      pageInfo = pageInfo,
+      currency = GBP,
+      pageImages = pageImages)
+    )
   }
 
   def offersAndCompetitions = CachedAction { implicit request =>

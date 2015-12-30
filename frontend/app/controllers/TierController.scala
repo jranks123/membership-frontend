@@ -57,15 +57,16 @@ trait DowngradeTier extends ActivityTracking with CatalogProvider
   }
 }
 
-trait UpgradeTier extends StripeServiceProvider {
+trait UpgradeTier extends StripeServiceProvider with CatalogProvider {
   self: TierController =>
 
   def upgrade(target: PaidTier) = ChangeToPaidAction(target).async { implicit request =>
+    implicit val c = catalog
     val sub = request.subscription
     val stripeKey = Some(stripeService.publicKey)
     val currency = sub.currency
     val countriesWithCurrency = CountryWithCurrency.withCurrency(currency)
-    val targetPlans = catalog.paidPlans(target)
+    val targetPlans = c.paidPlans(target)
 
     val identityUserFieldsF =
       IdentityService(IdentityApi)
@@ -86,10 +87,9 @@ trait UpgradeTier extends StripeServiceProvider {
       for {
         privateFields <- identityUserFieldsF
       } yield {
-        val currentPlan = catalog.freePlan(contact.tier)
         Ok(views.html.tier.upgrade.freeToPaid(
-          currentPlan,
-          targetPlans.year,
+          c.friend,
+          targetPlans,
           countriesWithCurrency,
           privateFields,
           pageInfo(privateFields, year)

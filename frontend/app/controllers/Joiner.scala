@@ -104,8 +104,8 @@ object Joiner extends Controller with ActivityTracking
       )
 
       Ok(views.html.joiner.form.payment(
+         plans = plans,
          countriesWithCurrencies = CountryWithCurrency.whitelisted(supportedCurrencies, GBP),
-         details = plans,
          idUser = idUserWithCountry,
          pageInfo = pageInfo))
     }

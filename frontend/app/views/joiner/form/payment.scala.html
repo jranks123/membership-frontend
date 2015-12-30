@@ -8,23 +8,23 @@
 @import com.gu.salesforce.PaidTier
 
 @import com.gu.membership.MembershipCatalog
-@(plan: PaidMembershipPlans[Current, PaidTier],
-  catalog: MembershipCatalog,
+@import views.support.PaidPlans
+@(plans: PaidMembershipPlans[Current, PaidTier],
   countriesWithCurrencies: List[CountryWithCurrency],
   idUser: IdentityUser,
   pageInfo: PageInfo
 )(implicit token: play.filters.csrf.CSRF.Token, request: actions.AuthRequest[_])
 
-@main(plan.tier.cta, pageInfo=pageInfo) {
+@main(plans.tier.cta, pageInfo=pageInfo) {
 
     <main class="page-content l-constrained">
 
-        <form action="@routes.Joiner.joinPaid(plan.tier)" method="POST" id="payment-form" class="js-form" novalidate>
+        <form action="@routes.Joiner.joinPaid(plans.tier)" method="POST" id="payment-form" class="js-form" novalidate>
             @CSRF.formField
-            <input type="hidden" name="tier" value="@plan.tier.slug"/>
+            <input type="hidden" name="tier" value="@plans.tier.slug"/>
 
             <section class="form-header">
-                <h1 class="form-headline">@plan.tier.cta</h1>
+                <h1 class="form-headline">@plans.tier.cta</h1>
                 <p class="page-intro"> Join as an annual Partner or Patron Member and get 2 months free</p>
             </section>
 
@@ -43,8 +43,8 @@
                 <div class="form-section__content">
 
                     <div class="form-group">
-                        @fragments.form.benefitsFieldset(plan.tier.benefits)
-                        @fragments.form.featureChoiceFieldset(plan.tier)
+                        @fragments.form.benefitsFieldset(plans.tier.benefits)
+                        @fragments.form.featureChoiceFieldset(plans.tier)
                     </div>
 
                     <div class="form-group">
@@ -73,7 +73,7 @@
 
                     <div class="form-group">
                         <h2 class="form-group__title">Billing</h2>
-                        @fragments.form.paymentOptions(plan)
+                        @fragments.form.paymentOptions(plans)
 
                         @fragments.form.billingAddress("Billing address")
                         @fragments.form.addressDetail(
@@ -87,11 +87,11 @@
                             county = idUser.privateFields.billingAddress4,
                             userCountry = idUser.privateFields.billingCountry
                         )
-                        @fragments.form.cardDetail(plan)
+                        @fragments.form.cardDetail(plans)
                     </div>
 
                     @fragments.form.errorMessageDisplay()
-                    @fragments.form.submit(plan.tier, catalog)
+                    @fragments.form.submit(PaidPlans(plans))
                 </div>
             </section>
         </form>

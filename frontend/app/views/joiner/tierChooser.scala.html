@@ -3,6 +3,7 @@
 @import com.gu.membership.MembershipCatalog
 
 @import views.support.PageInfo
+@import views.support.TierPlans._
 @(catalog: MembershipCatalog,
   pageInfo: PageInfo,
   eventOpt: Option[model.RichEvent.RichEvent],
@@ -42,16 +43,16 @@
                 </h2>
                 <ul class="grid grid--equal-heights grid--bordered grid--3up-stacked">
                     <li class="grid__item">
-                        @fragments.tier.packagePromo(friend, currency, catalog, Some("#package-benefits-friend"))
+                        @fragments.tier.packagePromo(catalog.friend, currency, Some("#package-benefits-friend"))
                     </li>
                     <li class="grid__item">
-                        @fragments.tier.packagePromo(supporter, currency, catalog, Some("#package-benefits-supporter"))
+                        @fragments.tier.packagePromo(catalog.supporter, currency, Some("#package-benefits-supporter"))
                     </li>
                     <li class="grid__item">
-                        @fragments.tier.packagePromo(partner, currency, catalog, Some("#package-benefits-partner"))
+                        @fragments.tier.packagePromo(catalog.partner, currency, Some("#package-benefits-partner"))
                     </li>
                 </ul>
-                @fragments.tier.packagePromo(patron, currency, catalog, chooseTier = true)
+                @fragments.tier.packagePromo(catalog.patron, currency, chooseTier = true)
             </div>
             @for(event <- eventOpt if accessOpt.isEmpty) {
                 <div class="page-section__supplementary">

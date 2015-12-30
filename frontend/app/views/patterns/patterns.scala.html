@@ -7,6 +7,7 @@
 @import com.gu.membership.MembershipCatalog
 @import com.gu.i18n.GBP
 @import com.gu.salesforce.Tier
+@import views.support.TierPlans._
 
 @(catalog: MembershipCatalog,
   events: Seq[model.RichEvent.RichEvent],
@@ -381,10 +382,10 @@
     @pattern("Package: Promo") {
         <ul class="grid grid--3up-stacked">
             <li class="grid__item">
-                @fragments.tier.packagePromo(partner, GBP, catalog)
+                @fragments.tier.packagePromo(catalog.partner, GBP)
             </li>
             <li class="grid__item">
-                @fragments.tier.packagePromo(patron, GBP, catalog)
+                @fragments.tier.packagePromo(catalog.patron, GBP)
             </li>
         </ul>
     }

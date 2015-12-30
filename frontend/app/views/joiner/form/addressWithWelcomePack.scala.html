@@ -5,9 +5,8 @@
 @import com.gu.memsub.Current
 @import com.gu.salesforce.Tier.Staff
 
-@import com.gu.membership.MembershipCatalog
-@(plan: FreeMembershipPlan[Current, Staff],
-  catalog: MembershipCatalog,
+@import views.support.FreePlan
+@(staffPlan: FreeMembershipPlan[Current, Staff],
   idUser: IdentityUser,
   flashMessage: Option[model.FlashMessage]
 )(implicit token: play.filters.csrf.CSRF.Token)
@@ -66,7 +65,7 @@
                     }
 
                     @fragments.form.errorMessageDisplay()
-                    @fragments.form.submit(plan.tier, catalog)
+                    @fragments.form.submit(FreePlan(staffPlan))
                 </form>
 
             </div>

@@ -3,7 +3,13 @@
 
 @import com.gu.i18n.Currency
 @import com.gu.salesforce.Tier
-@(catalog: MembershipCatalog,
+@import com.gu.membership.PaidMembershipPlans
+@import com.gu.salesforce.Tier.Patron
+@import com.gu.memsub.Current
+@import views.support.PaidPlans
+@import com.gu.salesforce.Tier.Partner
+@(patronPlans: PaidMembershipPlans[Current, Patron],
+  partnerPlans: PaidMembershipPlans[Current, Partner],
   pageInfo: PageInfo,
   currency: Currency,
   pageImages: Seq[model.ResponsiveImageGroup])(implicit token: play.filters.csrf.CSRF.Token)
@@ -74,13 +80,13 @@
             <div class="page-slice__content">
                 <ul class="grid grid--equal-heights grid--bordered grid--2up-stacked">
                     <li class="grid__item">
-                    @fragments.tier.packagePromo(Tier.supporter, currency, catalog, isReversed = true)
+                    @fragments.tier.packagePromo(PaidPlans(patronPlans), currency, isReversed = true)
                     </li>
                     <li class="grid__item">
-                    @fragments.tier.packagePromo(Tier.partner, currency, catalog, isReversed = true)
+                    @fragments.tier.packagePromo(PaidPlans(partnerPlans), currency, isReversed = true)
                     </li>
                 </ul>
-                @fragments.tier.friendTeaser(catalog)
+                @fragments.tier.friendTeaser()
             </div>
         </div>
     </div>

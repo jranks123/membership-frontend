@@ -1,7 +1,11 @@
 @import com.gu.membership.MembershipCatalog
 @import views.support.PageInfo
 @import com.gu.i18n.CountryGroup
-@(catalog: MembershipCatalog,
+@import views.support.PaidPlans
+@import com.gu.membership.PaidMembershipPlans
+@import com.gu.salesforce.Tier.Supporter
+@import com.gu.memsub.Current
+@(supporterPlans: PaidMembershipPlans[Current, Supporter],
   pageInfo: PageInfo,
   pageImages: Seq[model.ResponsiveImageGroup])(implicit token: play.filters.csrf.CSRF.Token, countryGroup: CountryGroup)
 
@@ -19,7 +23,7 @@
                         <span class="text-pale">Plus, join today and £1 will be donated to the Guardian Charity Appeal.</span>
                     </p>
                 </div>
-                @fragments.tier.packagePromo(Tier.supporter, countryGroup.currency, catalog, showDescription=false, modifierClass=Some("package-promo--spread"))
+                @fragments.tier.packagePromo(PaidPlans(supporterPlans), countryGroup.currency, showDescription=false, modifierClass=Some("package-promo--spread"))
             }
         </div>
     }
@@ -68,7 +72,7 @@
         <div class="l-constrained">
             <h2 class="page-slice__headline">What's included</h2>
             <div class="page-slice__content">
-                @fragments.tier.packageFeature(Tier.supporter, countryGroup, catalog, isReversed=true)
+                @fragments.tier.packageFeature(PaidPlans(supporterPlans), countryGroup, isReversed=true)
             </div>
         </div>
     </div>

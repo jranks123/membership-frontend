@@ -8,12 +8,10 @@
 @import views.support.IdentityUser
 @import com.gu.membership.FreeMembershipPlan
 @import com.gu.memsub.Current
-@import com.gu.i18n.GBP
 
-@import com.gu.membership.MembershipCatalog
-@(plan: FreeMembershipPlan[Current, Friend],
+@import views.support.FreePlan
+@(friendPlan: FreeMembershipPlan[Current, Friend],
   idUser: IdentityUser,
-  catalog: MembershipCatalog,
   pageInfo: PageInfo
 )(implicit token: play.filters.csrf.CSRF.Token)
 
@@ -71,7 +69,7 @@
                     </div>
 
                     @fragments.form.errorMessageDisplay()
-                    @fragments.form.submit(plan.tier, catalog)
+                    @fragments.form.submit(FreePlan(friendPlan))
                 </div>
             </section>
         </form>

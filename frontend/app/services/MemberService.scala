@@ -384,8 +384,8 @@ class MemberService(identityService: IdentityService,
       zuoraFeatures.filter(f => choice.map(_.zuoraCode).contains(f.code))
 
     catalogService.catalog.unsafeFind(productRatePlanId).tier match {
-      case patron => byChoice(FeatureChoice.all)
-      case partner => byChoice(choice).take(1)
+      case Patron() => byChoice(FeatureChoice.all)
+      case Partner() => byChoice(choice).take(1)
       case _ => Nil
     }
   }

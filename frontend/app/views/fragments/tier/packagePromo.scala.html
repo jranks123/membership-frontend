@@ -1,13 +1,12 @@
 @import com.gu.i18n.Currency
-@import com.gu.membership.MembershipCatalog
 @import com.gu.salesforce.Tier._
 @import com.gu.salesforce._
 @import views.support.DisplayText._
 @import views.support.Pricing._
+@import views.support.{FreePlan, PaidPlans, TierPlans}
 @(
-    tier: Tier,
+    plans: TierPlans,
     currency: Currency,
-    catalog: MembershipCatalog,
     showDescription: Boolean = true,
     descriptionAnchor: Option[String] = None,
     modifierClass: Option[String] = None,
@@ -24,18 +23,18 @@
 }
 
 @actionAttrs = {
-    href="@link(tier)"
+    href="@link(plans.tier)"
     data-metric-trigger="click"
     data-metric-category="join"
-    data-metric-action="@tier.slug"
+    data-metric-action="@plans.tier.slug"
 }
 
-<div class="@if(isReversed){ package-promo--reversed} @modifierClass.getOrElse("package-promo--default") @extraClasses.mkString("") tone-border-@tier.slug">
+<div class="@if(isReversed){ package-promo--reversed} @modifierClass.getOrElse("package-promo--default") @extraClasses.mkString("") tone-border-@plans.tier.slug">
     <div class="package-promo__header">
         <a class="no-underline minimal-link" @actionAttrs>
             <div class="package-promo__tier">
                 <div class="package-promo__tier__title">
-                    @fragments.tier.tierTrail(tier, showCaption=false)
+                    @fragments.tier.tierTrail(plans.tier, showCaption=false)
                 </div>
             </div>
         </a>
@@ -44,7 +43,7 @@
         @if(showDescription) {
             <div class="package-promo__description copy">
                 <ul class="o-bulleted-list">
-                    @for(highlight <- if(chooseTier && tier == patron) tier.chooseTierPatron else tier.highlights) {
+                    @for(highlight <- if(chooseTier && plans.tier == patron) plans.tier.chooseTierPatron else plans.tier.highlights) {
                         <li>
                             @if(highlight.isNew) {
                                 @fragments.inlineIcon("new-arrow", List("icon-inline--badge", "icon-inline--brand"))
@@ -60,14 +59,14 @@
         }
         <div class="package-promo__actions">
             <div class="package-promo__actions__pricing">
-               @tier match {
-                   case t: FreeTier => { @fragments.pricing.freePriceInfo() }
-                   case t: PaidTier => { @fragments.pricing.paidPriceInfo(catalog.paidPlans(t).pricingByCurrencyOrGBP(currency), t) }
+               @plans match {
+                   case FreePlan(_) => { @fragments.pricing.freePriceInfo() }
+                   case PaidPlans(p) => { @fragments.pricing.paidPriceInfo(p.pricingByCurrencyOrGBP(currency), p.tier) }
                }
             </div>
-            <a class="action action--no-icon u-no-bottom-margin qa-package-@tier.slug" @actionAttrs>
+            <a class="action action--no-icon u-no-bottom-margin qa-package-@plans.tier.slug" @actionAttrs>
                 <span class="action__label">
-                    Become a @tier.name
+                    Become a @plans.tier.name
                 </span>
                 @fragments.actionIcon("arrow-right")
             </a>
