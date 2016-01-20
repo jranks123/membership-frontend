@@ -1,0 +1,72 @@
+@import com.gu.i18n.CountryGroup
+@import com.gu.memsub.Current
+@import com.gu.salesforce.Tier.Supporter
+@import com.gu.membership.PaidMembershipPlans
+@import views.support.PageInfo
+@(supporterPlans: PaidMembershipPlans[Current, Supporter],
+    pageInfo: PageInfo,
+    pageImages: Seq[model.ResponsiveImageGroup])(implicit token: play.filters.csrf.CSRF.Token, countryGroup: CountryGroup)
+
+@import configuration.Videos
+@import views.support.Asset
+@main("Supporters", pageInfo=pageInfo) {
+    @fragments.page.heroBanner("hero-banner--eu-supporter") {
+        Become a Guardian&nbsp;Supporter
+    } {
+        Supporters keep our journalism fearless and free from interference.
+    }()
+
+    @fragments.page.section(hasBorder = false) {
+        @fragments.tier.packagePromoSupporter(supporterPlans, countryGroup)
+    }
+
+    @fragments.page.section("Support independent journalism", isNarrow = false, hasBottomPadding = false) {
+        <div class="video-preview video-preview--plain">
+            <div class="video-preview__video">
+            @fragments.media.videoPlayer(Videos.supporters)
+            </div>
+            <div class="video-preview__header">
+                @fragments.inlineIcon("video", List("icon-inline--scale"))
+                Watch our journalists explain why the Guardian’s unique approach to journalism is worth defending
+            </div>
+        </div>
+    }
+
+    @for(img <- pageImages.find(_.name.contains("fearless"))) {
+        @fragments.page.sectionCardStack(img) {
+            <div class="listing__text">
+                <p>For 200 years, the Guardian has been fearless and independent.</p>
+                <p>
+                    Our journalism shines a light on critical, under-reported stories across Europe and the globe
+                    and we have become the world’s most read, serious English-language newspaper, visited by
+                    130 million unique browsers each month.
+                </p>
+                <p>
+                    By becoming a Member, your financial contribution will support our independence
+                    and our award-winning journalism.
+                </p>
+                <p>
+                    <a class="action" href="@{routes.Joiner.enterPaidDetails(supporterPlans.tier)}?countryGroup=@countryGroup.id">Become a Supporter</a>
+                </p>
+            </div>
+        }
+    }
+
+    @fragments.page.section("If you read the Guardian, join the Guardian") {
+        @fragments.promos.promoQuote(
+            Asset.at("images/common/katharine-viner-cutout.png"),
+            "Katharine Viner, editor-in-chief of the Guardian"
+        ) {
+            <blockquote class="blockquote blockquote--feature">
+                With Guardian Members we have a profound opportunity to
+                defend the Guardian’s independent journalism and collaborate
+                together on a better, more informed future.
+                <cite class="blockquote__citation">Katharine Viner, editor-in-chief of the Guardian</cite>
+            </blockquote>
+        }
+    }
+
+    @fragments.page.section("What's included") {
+        @fragments.tier.packagePromoSupporter(supporterPlans, countryGroup)
+    }
+}

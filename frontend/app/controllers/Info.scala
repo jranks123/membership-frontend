@@ -56,7 +56,7 @@ trait Info extends Controller {
       )
     )
 
-    Ok(views.html.info.supporter(
+    Ok(views.html.info.supporter.UK(
       TouchpointBackend.Normal.catalog.supporter,
       PageInfo(
         title = CopyConfig.copyTitleSupporters,
@@ -85,7 +85,7 @@ trait Info extends Controller {
     )
 
     Ok(
-      views.html.info.supporterUSA(
+      views.html.info.supporter.US(
         TouchpointBackend.Normal.catalog.supporter,
         PageInfo(
           title = CopyConfig.copyTitleSupporters,
@@ -112,7 +112,7 @@ trait Info extends Controller {
     )
 
     Ok(
-      views.html.info.supporterEurope(
+      views.html.info.supporter.europe(
         TouchpointBackend.Normal.catalog.supporter,
         PageInfo(
           title = CopyConfig.copyTitleSupporters,
@@ -139,7 +139,7 @@ trait Info extends Controller {
     )
 
     Ok(
-      views.html.info.supporterInternational(
+      views.html.info.supporter.international(
         TouchpointBackend.Normal.catalog.supporter,
         PageInfo(
           title = CopyConfig.copyTitleSupporters,
