@@ -15,10 +15,10 @@ import scala.concurrent.Future
 trait Info extends Controller {
   def supporterRedirect = NoCacheAction { implicit request =>
     val countryGroup =
-      request.headers
-        .get("X-Fastly-Country-Code")
-        .flatMap(CountryGroup.byFastlyCountryCode)
-        .getOrElse(CountryGroup.RestOfTheWorld)
+        request.headers
+          .get("X-GU-GeoIP-Country-Code")
+          .flatMap(CountryGroup.byFastlyCountryCode)
+          .getOrElse(CountryGroup.RestOfTheWorld)
 
     Redirect(redirectToSupporterPage(countryGroup))
   }
