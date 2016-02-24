@@ -18,6 +18,7 @@ object Benefits {
   val PriorityBookingTiers = DiscountTicketTiers
   val ComplimenataryTicketTiers = Set[Tier](Partner(), Patron())
 
+  val englishHeritage = Benefit("english_heritage"," Free English Heritage membership worth £88 when you become a Guardian Partner by 31 March",isNew=true)
   val welcomePack = Benefit("welcome_pack", "Welcome pack, card and gift")
   val accessTicket = Benefit("access_tickets", "Access to tickets")
   val liveStream = Benefit("live_stream", "Access to live stream")
@@ -26,8 +27,8 @@ object Benefits {
   val priorityBooking = Benefit("priority_booking", "48hrs priority booking")
   val noBookingFees = Benefit("no_booking_fees", "No booking fees")
   val guest = Benefit("guest", "Bring a guest")
-  val booksOrTickets = Benefit("books_or_tickets", s"$zuoraFreeEventTicketsAllowance tickets or 4 books", isNew = true)
-  val booksAndTickets = Benefit("books_and_tickets", s"$zuoraFreeEventTicketsAllowance tickets and 4 books", isNew = true)
+  val booksOrTickets = Benefit("books_or_tickets", s"$zuoraFreeEventTicketsAllowance tickets or 4 books")
+  val booksAndTickets = Benefit("books_and_tickets", s"$zuoraFreeEventTicketsAllowance tickets and 4 books")
 
   val discount = Benefit("discount", "20% discount for you and a guest")
   val uniqueExperiences = Benefit("unique_experiences", "Exclusive behind-the-scenes functions")
