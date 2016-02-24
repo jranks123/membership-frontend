@@ -117,6 +117,8 @@ object Eventbrite {
                            fee: Option[EBPricing],
                            sales_end: Instant,
                            sales_start: Option[Instant],
+                           minimum_quantity: Int,
+                           maximum_quantity: Int,
                            hidden: Option[Boolean]) extends EBObject {
     val isHidden = hidden.contains(true)
 
