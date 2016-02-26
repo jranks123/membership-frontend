@@ -17,6 +17,7 @@ GET            /analytics-off                         controllers.Testing.analyt
 
 # Join
 POST           /api/join/:tier                        controllers.Api.join(tier: PaidTier)
+POST           /api/join-preview/:tier                controllers.Api.joinPreview(tier: PaidTier)
 GET            /join/staff                            controllers.Joiner.staff
 GET            /join/staff/enter-details              controllers.Joiner.enterStaffDetails
 GET            /join/friend/enter-details             controllers.Joiner.enterFriendDetails

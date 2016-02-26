@@ -8,7 +8,7 @@ import com.gu.stripe.Stripe
 import com.gu.stripe.Stripe.Serializer._
 import com.typesafe.scalalogging.LazyLogging
 import forms.MemberForm._
-import forms.{ApiRequest, DirectDebit, StripePayment}
+import forms._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.BodyParsers.parse.{json => BodyJson}
@@ -22,8 +22,12 @@ import scala.concurrent.Future
 object Api extends Controller with ActivityTracking
   with LazyLogging
   with MemberServiceProvider {
-
-  def join(tier: Tier) = AuthenticatedApiAction.async(BodyJson[ApiRequest]) { implicit request =>
+  def joinPreview(tier: Tier) = NoCacheAction.async(BodyJson[ApiJoinPreviewRequest]) { implicit request =>
+    val apiRequest = request.body
+     val res = ApiJoinPreviewResponse(Price(500,"GBP"), apiRequest.planChoice, "hVSCf8Pq7wfKL2R5")
+     Future.successful(Ok(Json.toJson(res)))
+  }
+  def join(tier: Tier) = AuthenticatedApiAction.async(BodyJson[ApiJoinRequest]) { implicit request =>
     val apiRequest = request.body
     val planChoice = apiRequest.planChoice
 
@@ -35,14 +39,14 @@ object Api extends Controller with ActivityTracking
       billingAddress = apiRequest.billingAddress,
       marketingChoices = MarketingChoicesForm(None, None),
       password = Some(apiRequest.password),
-      casId = None, //TODO what IS THIS?
-      subscriberOffer = false, //TODO WHAT IS THIS
-      featureChoice = Set.empty, // TODO ??
+      casId = None,
+      subscriberOffer = false,
+      featureChoice = Set.empty,
       suppliedPromoCode = None
     )
 
     makeMember(tier, Ok(Json.obj("status" -> "OK", "message" -> "something else")))(form)
-     // Future.successful(Ok(Json.obj("status" -> "OK", "message" -> "something")))
+    // Future.successful(Ok(Json.obj("status" -> "OK", "message" -> "something")))
 
   }
 
@@ -53,8 +57,6 @@ object Api extends Controller with ActivityTracking
 
   private def makeMember(tier: Tier, onSuccess: => Result)(formData: JoinForm)(implicit request: AuthRequest[_]) = {
     implicit val bp: BackendProvider = request
-    //TODO campaign code? should we just hard code that to none?
-    //TODO HARDCODED event to none, is that ok?
     memberService.createMember(request.user, formData, IdentityRequest(request), None, None)
       .map(_ => onSuccess) recover {
       case error: Stripe.Error => Forbidden(Json.toJson(error))
@@ -63,7 +65,5 @@ object Api extends Controller with ActivityTracking
         Forbidden
     }
   }
-
-
 
 }

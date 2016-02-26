@@ -7,24 +7,46 @@ import com.gu.salesforce.Tier.{Patron, Partner, Supporter}
 import play.api.libs.json._
 
 sealed trait Payment {
-  val planIdentifier: String
 }
 
-case class StripePayment(planIdentifier: String, token: String) extends Payment
+case class StripePayment(token: String) extends Payment
 
-case class DirectDebit(planIdentifier: String, bankAccount: String, sortCode: String) extends Payment
+case class DirectDebit(bankAccount: String, sortCode: String) extends Payment
 
 case class Plan(tier: PaidTier, billingPeriod: BillingPeriod)
 
-case class ApiRequest(
-                       firstName: String,
-                       lastName: String,
-                       password: String,
-                       deliveryAddress: Address,
-                       billingAddress: Option[Address],
-                       planChoice: Plan,
-                       payment: Payment
-                     )
+trait ApiRequest {
+  val deliveryAddress: Address
+  val billingAddress: Option[Address]
+  val planChoice: Plan
+  val payment: Payment
+}
+
+case class ApiJoinPreviewRequest(
+                                  deliveryAddress: Address,
+                                  billingAddress: Option[Address],
+                                  planChoice: Plan,
+                                  payment: Payment
+                                ) extends ApiRequest
+
+case class ApiJoinRequest(
+                           firstName: String,
+                           lastName: String,
+                           password: String,
+                           deliveryAddress: Address,
+                           billingAddress: Option[Address],
+                           planChoice: Plan,
+                           payment: Payment,
+                           planIdentifier: String // TODO I don't think this name is descriptive enough (this is the id the preview returns so that you know what you are paying for hasn't changed)
+                         ) extends ApiRequest
+
+case class Price(penceAmount: Int, currency: String)
+
+case class ApiJoinPreviewResponse(
+        price : Price,
+        plan :Plan,
+        planIdentifier:String) //TODO should this be the name?
+
 
 object Plan {
   implicit val paidTierFormat = new Format[PaidTier] {
@@ -79,7 +101,19 @@ object Payment {
   }
 }
 
-object ApiRequest {
+object ApiJoinRequest {
   implicit val addressFormat = Json.format[Address]
-  implicit val ApiRequestFormat = Json.format[ApiRequest]
+  implicit val ApiJoinRequestFormat = Json.format[ApiJoinRequest]
+}
+
+object ApiJoinPreviewRequest {
+  implicit val addressFormat = Json.format[Address]
+  implicit val ApiJoinPreviewRequestFormat = Json.format[ApiJoinPreviewRequest]
+}
+
+object Price{
+  implicit val jf = Json.format[Price]
+}
+object ApiJoinPreviewResponse{
+  implicit val jf = Json.format[ApiJoinPreviewResponse]
 }
