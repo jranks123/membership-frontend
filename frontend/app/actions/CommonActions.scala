@@ -56,7 +56,7 @@ trait CommonActions {
 
   val AuthenticatedAction = NoCacheAction andThen authenticated()
 
-  val AuthenticatedApiAction = NoCacheAction andThen authenticated(_ => Unauthorized("NOPE"))
+  val AuthenticatedApiAction = NoCacheAction andThen authenticated(_ => Unauthorized)
 
   val AuthenticatedNonMemberAction = AuthenticatedAction andThen onlyNonMemberFilter()
 

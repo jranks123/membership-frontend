@@ -16,8 +16,6 @@ GET            /test-users                            controllers.Testing.testUs
 GET            /analytics-off                         controllers.Testing.analyticsOff
 
 # Join
-POST           /api/join/:tier                        controllers.Api.join(tier: PaidTier)
-POST           /api/join-preview/:tier                controllers.Api.joinPreview(tier: PaidTier)
 GET            /join/staff                            controllers.Joiner.staff
 GET            /join/staff/enter-details              controllers.Joiner.enterStaffDetails
 GET            /join/friend/enter-details             controllers.Joiner.enterFriendDetails
@@ -123,3 +121,6 @@ GET            /assets/*assetFile                     controllers.CachedAssets.a
 GET            /p/:promoCodeStr                       controllers.Promotions.promotionPage(promoCodeStr)
 GET            /english-heritage                      controllers.Default.redirect(to="/p/EH2016")
 
+#API
+POST           /api/join                              controllers.Api.join
+POST           /api/join-preview                      controllers.Api.joinPreview

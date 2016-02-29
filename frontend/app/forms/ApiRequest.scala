@@ -1,13 +1,13 @@
 package forms
 
+//TODO this file should be called something else and probably should be in another package as well
 import com.gu.memsub._
 
 import com.gu.salesforce.PaidTier
 import com.gu.salesforce.Tier.{Patron, Partner, Supporter}
 import play.api.libs.json._
 
-sealed trait Payment {
-}
+sealed trait Payment
 
 case class StripePayment(token: String) extends Payment
 
@@ -15,38 +15,43 @@ case class DirectDebit(bankAccount: String, sortCode: String) extends Payment
 
 case class Plan(tier: PaidTier, billingPeriod: BillingPeriod)
 
+//TODO see if there is any way of using common address without making lineTwo and county mandatory
+case class ApiAddress(lineOne: String,
+                      lineTwo: Option[String],
+                      town: String,
+                      countyOrState: Option[String],
+                      postCode: String, countryName: String)
+
 trait ApiRequest {
-  val deliveryAddress: Address
-  val billingAddress: Option[Address]
+  val deliveryAddress: ApiAddress
+  val billingAddress: Option[ApiAddress]
   val planChoice: Plan
   val payment: Payment
 }
 
-case class ApiJoinPreviewRequest(
-                                  deliveryAddress: Address,
-                                  billingAddress: Option[Address],
-                                  planChoice: Plan,
-                                  payment: Payment
+case class ApiJoinPreviewRequest(deliveryAddress: ApiAddress,
+                                 billingAddress: Option[ApiAddress],
+                                 planChoice: Plan,
+                                 payment: Payment
                                 ) extends ApiRequest
 
-case class ApiJoinRequest(
-                           firstName: String,
-                           lastName: String,
-                           password: String,
-                           deliveryAddress: Address,
-                           billingAddress: Option[Address],
-                           planChoice: Plan,
-                           payment: Payment,
-                           planIdentifier: String // TODO I don't think this name is descriptive enough (this is the id the preview returns so that you know what you are paying for hasn't changed)
+case class ApiJoinRequest(firstName: String,
+                          lastName: String,
+                          password: String,
+                          deliveryAddress: ApiAddress,
+                          billingAddress: Option[ApiAddress],
+                          planChoice: Plan,
+                          payment: Payment,
+                          planIdentifier: String // TODO I don't think this name is descriptive enough (this is the id the preview returns so that you know what you are paying for hasn't changed)
                          ) extends ApiRequest
 
 case class Price(penceAmount: Int, currency: String)
 
-case class ApiJoinPreviewResponse(
-        price : Price,
-        plan :Plan,
-        planIdentifier:String) //TODO should this be the name?
+case class ApiJoinPreviewResponse(price: Price, plan: Plan, planIdentifier: String)
 
+object ApiAddress {
+  implicit val jf = Json.format[ApiAddress]
+}
 
 object Plan {
   implicit val paidTierFormat = new Format[PaidTier] {
@@ -102,18 +107,17 @@ object Payment {
 }
 
 object ApiJoinRequest {
-  implicit val addressFormat = Json.format[Address]
   implicit val ApiJoinRequestFormat = Json.format[ApiJoinRequest]
 }
 
 object ApiJoinPreviewRequest {
-  implicit val addressFormat = Json.format[Address]
   implicit val ApiJoinPreviewRequestFormat = Json.format[ApiJoinPreviewRequest]
 }
 
-object Price{
+object Price {
   implicit val jf = Json.format[Price]
 }
-object ApiJoinPreviewResponse{
+
+object ApiJoinPreviewResponse {
   implicit val jf = Json.format[ApiJoinPreviewResponse]
 }
