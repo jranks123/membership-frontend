@@ -2,29 +2,25 @@ package controllers
 
 
 import actions.{RichAuthRequest, _}
-import com.gu.identity.play.IdMinimalUser
 import com.gu.memsub.Address
 import com.gu.memsub.util.WebServiceHelperError
-import com.gu.salesforce._
 import com.gu.stripe.Stripe
 import com.gu.stripe.Stripe.Serializer._
 import com.typesafe.scalalogging.LazyLogging
 import forms.MemberForm._
-import forms._
+import model._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.BodyParsers.parse.{json => BodyJson}
 import play.api.mvc._
-import services._
 import tracking.ActivityTracking
-import utils.CampaignCode
 
 import scala.concurrent.Future
 
 object Api extends Controller with ActivityTracking
   with LazyLogging
   with MemberServiceProvider {
-
+  //TODO we should probably remove this
   def joinPreview = AuthenticatedApiAction.async(BodyJson[ApiJoinPreviewRequest]) { implicit request =>
     val apiRequest = request.body
     val res = ApiJoinPreviewResponse(Price(50000, "GBP"), apiRequest.planChoice, "THIS_DOESNT_WORK_YET")

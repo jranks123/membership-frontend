@@ -1,10 +1,8 @@
-package forms
+package model
 
-//TODO this file should be called something else and probably should be in another package as well
 import com.gu.memsub._
-
 import com.gu.salesforce.PaidTier
-import com.gu.salesforce.Tier.{Patron, Partner, Supporter}
+import com.gu.salesforce.Tier.{Partner, Patron, Supporter}
 import play.api.libs.json._
 
 sealed trait Payment
@@ -41,8 +39,7 @@ case class ApiJoinRequest(firstName: String,
                           deliveryAddress: ApiAddress,
                           billingAddress: Option[ApiAddress],
                           planChoice: Plan,
-                          payment: Payment,
-                          planIdentifier: String // TODO I don't think this name is descriptive enough (this is the id the preview returns so that you know what you are paying for hasn't changed)
+                          payment: Payment
                          ) extends ApiRequest
 
 case class Price(penceAmount: Int, currency: String)
