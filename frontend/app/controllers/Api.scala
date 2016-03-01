@@ -2,13 +2,13 @@ package controllers
 
 
 import actions.{RichAuthRequest, _}
-import com.gu.memsub.Address
+import com.gu.memsub.{Address => FormAddress}
 import com.gu.memsub.util.WebServiceHelperError
 import com.gu.stripe.Stripe
 import com.gu.stripe.Stripe.Serializer._
 import com.typesafe.scalalogging.LazyLogging
 import forms.MemberForm._
-import model._
+import model.Api._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.BodyParsers.parse.{json => BodyJson}
@@ -35,8 +35,8 @@ object Api extends Controller with ActivityTracking
       tier = planChoice.tier,
       name = NameForm(apiRequest.firstName, apiRequest.lastName),
       payment = getPaymentForm(apiRequest),
-      deliveryAddress = toAddress(apiRequest.deliveryAddress),
-      billingAddress = apiRequest.billingAddress.map(toAddress),
+      deliveryAddress = toFormAddress(apiRequest.deliveryAddress),
+      billingAddress = apiRequest.billingAddress.map(toFormAddress),
       marketingChoices = MarketingChoicesForm(None, None),
       password = Some(apiRequest.password),
       casId = None,
@@ -49,8 +49,7 @@ object Api extends Controller with ActivityTracking
 
   }
 
-  //TODO IS THERE A BETTER WAY OF DOING THIS?
-  private def toAddress(apiAddress: ApiAddress): Address = Address(
+  implicit private def toFormAddress(apiAddress: Address): FormAddress = FormAddress(
     lineOne = apiAddress.lineOne,
     lineTwo = apiAddress.lineTwo.getOrElse(""),
     town = apiAddress.town,
@@ -69,7 +68,6 @@ object Api extends Controller with ActivityTracking
     memberService.createMember(request.user, formData, IdentityRequest(request), None, None)
       .map(_ => onSuccess) recover {
       case error: Stripe.Error => Forbidden(Json.toJson(error))
-        //TODO THIS JUST RE-THROWS THE ERRORS RETURNED BY ANY WEBSERVICE BUT THE STATUS FOR EXAMPLE COULD NOT BE THE CORRECT NOW (FOR EXAMPLE BAD REQUEST FOR THE WEB SERVICE FOR NOT THE API)
       case error: WebServiceHelperError[_] => new Status(error.responseCode)(error.responseBody)
       case error =>
         logger.error("An error occurred while calling api.makeMember", error)
