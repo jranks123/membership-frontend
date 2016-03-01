@@ -8,6 +8,7 @@ import monitoring.SentryLogging.{UserGoogleId, UserIdentityId}
 import org.slf4j.MDC
 import play.api._
 import play.api.http.DefaultHttpErrorHandler
+import play.api.libs.json.Json
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
@@ -34,7 +35,10 @@ class ErrorHandler @Inject() (
   }
 
   override def onClientError(request: RequestHeader, statusCode: Int, message: String = ""): Future[Result] = {
-    super.onClientError(request, statusCode, message).map(Cached(_))
+    if (request.path.startsWith("/api"))
+      Future.successful(Results.Status(statusCode)(Json.obj("errorMessage" -> message)))
+    else
+      super.onClientError(request, statusCode, message).map(Cached(_))
   }
 
   override protected def onNotFound(request: RequestHeader, message: String): Future[Result] = {

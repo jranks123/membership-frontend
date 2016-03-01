@@ -20,14 +20,14 @@ import scala.concurrent.Future
 object Api extends Controller with ActivityTracking
   with LazyLogging
   with MemberServiceProvider {
-  //TODO we should probably remove this
-  def joinPreview = AuthenticatedApiAction.async(BodyJson[ApiJoinPreviewRequest]) { implicit request =>
+
+  def joinPreview = AuthenticatedApiAction.async(BodyJson[JoinPreviewRequest]) { implicit request =>
     val apiRequest = request.body
     val res = ApiJoinPreviewResponse(Price(50000, "GBP"), apiRequest.planChoice, "THIS_DOESNT_WORK_YET")
     Future.successful(Ok(Json.toJson(res)))
   }
 
-  def join = AuthenticatedApiAction.async(BodyJson[ApiJoinRequest]) { implicit request =>
+  def join = AuthenticatedApiAction.async(BodyJson[JoinRequest]) { implicit request =>
     val apiRequest = request.body
     val planChoice = apiRequest.planChoice
 
@@ -58,9 +58,9 @@ object Api extends Controller with ActivityTracking
     countryName = apiAddress.countryName
   )
 
-  private def getPaymentForm(apiRequest: ApiRequest) = apiRequest.payment match {
-    case s: StripePayment => PaymentForm(apiRequest.planChoice.billingPeriod, s.token)
-    case dd: DirectDebit => PaymentForm(apiRequest.planChoice.billingPeriod, "THIS IS WRONG!") // TODO see how to do this properly( is there a way to do this?)
+  private def getPaymentForm(joinRequest: JoinRequest) = joinRequest.payment match {
+    case s: StripePayment => PaymentForm(joinRequest.planChoice.billingPeriod, s.token)
+    case dd: DirectDebit => PaymentForm(joinRequest.planChoice.billingPeriod, "THIS IS WRONG!") // TODO see how to do this properly( is there a way to do this?)
   }
 
   private def makeMember(onSuccess: => Result)(formData: JoinForm)(implicit request: AuthRequest[_]) = {
