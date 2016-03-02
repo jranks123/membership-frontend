@@ -2,6 +2,7 @@ package model
 
 import com.github.nscala_time.time.Imports._
 import com.gu.i18n.GBP
+import com.gu.memsub.Price
 import com.gu.salesforce.Tier
 import com.netaporter.uri.Uri
 import com.netaporter.uri.dsl._
@@ -13,6 +14,7 @@ import play.api.data.validation.ValidationError
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import services.GridService
+import services.GridService.{CropQueryParam, ImageIdWithCrop}
 import utils.StringUtils._
 import views.support.Asset
 import views.support.Dates.YearMonthDayHours
@@ -289,8 +291,9 @@ object Eventbrite {
       }
     } yield uri
 
-    val mainImageHasNoCrop: Boolean =
-      mainImageUrl.fold(false)(uri => uri.query.param(GridService.CropQueryParam).isEmpty)
+    val mainImageHasNoCrop: Boolean = mainImageUrl.exists(!_.query.params.contains(CropQueryParam))
+
+    val mainImageGridId: Option[ImageIdWithCrop] = mainImageUrl.flatMap(ImageIdWithCrop.fromGuToolsUri)
 
     val slug = slugify(name.text) + "-" + id
 
@@ -336,6 +339,7 @@ object Eventbrite {
   case class EBOrder(id: String, first_name: String, email: String, costs: EBCosts, attendees: Seq[EBAttendee]) extends EBObject {
     val ticketCount = attendees.length
     val totalCost = costs.gross.value / 100f
+    val totalCostText = if(totalCost > 0) Price(totalCost, GBP).pretty else "free"
   }
 
   object EBOrder {
