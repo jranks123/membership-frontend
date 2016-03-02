@@ -2,12 +2,13 @@ package model
 
 import com.gu.memsub.{Quarter, Year, Month, BillingPeriod}
 import com.gu.salesforce.PaidTier
-import com.gu.salesforce.Tier.{Partner, Patron, Supporter}
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import utils.JsonValidationHelper._
 package Api {
+
+  import com.gu.salesforce.Tier
 
   sealed trait Payment
 
@@ -63,9 +64,9 @@ package Api {
       override def writes(p: PaidTier): JsValue = JsString(p.name)
 
       override def reads(json: JsValue): JsResult[PaidTier] = json match {
-        case JsString("Supporter") => JsSuccess(Supporter())
-        case JsString("Partner") => JsSuccess(Partner())
-        case JsString("Patron") => JsSuccess(Patron())
+        case JsString("Supporter") => JsSuccess(Tier.supporter)
+        case JsString("Partner") => JsSuccess(Tier.partner)
+        case JsString("Patron") => JsSuccess(Tier.patron)
 
         case _ => JsError("Unknown tier")
       }
@@ -83,8 +84,6 @@ package Api {
       }
     }
     implicit val planFormat = Json.format[Plan]
-    // implicit val planFormat = Format(Json.reads[Plan], Json.writes[Plan])
-
   }
 
   object StripePayment {
