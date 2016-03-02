@@ -17,7 +17,7 @@ import tracking.ActivityTracking
 
 import scala.concurrent.Future
 
-object Api extends Controller with ActivityTracking
+object MemberApi extends Controller with ActivityTracking
   with LazyLogging
   with MemberServiceProvider {
 

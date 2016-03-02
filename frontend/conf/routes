@@ -122,5 +122,5 @@ GET            /p/:promoCodeStr                       controllers.Promotions.pro
 GET            /english-heritage                      controllers.Default.redirect(to="/p/EH2016")
 
 #API
-POST           /api/join                              controllers.Api.join
-POST           /api/join-preview                      controllers.Api.joinPreview
+POST           /member                            controllers.MemberApi.join
+POST           /member-preview                    controllers.MemberApi.joinPreview

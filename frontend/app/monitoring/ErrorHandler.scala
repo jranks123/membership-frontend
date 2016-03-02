@@ -35,9 +35,6 @@ class ErrorHandler @Inject() (
   }
 
   override def onClientError(request: RequestHeader, statusCode: Int, message: String = ""): Future[Result] = {
-    if (request.path.startsWith("/api"))
-      Future.successful(Results.Status(statusCode)(Json.obj("errorMessage" -> message)))
-    else
       super.onClientError(request, statusCode, message).map(Cached(_))
   }
 
