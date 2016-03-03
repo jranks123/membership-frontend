@@ -1,7 +1,7 @@
 package controllers
 
 
-import com.gu.i18n.{Country, CountryGroup}
+import com.gu.i18n.{Currency, Country, CountryGroup}
 import com.gu.memsub.BillingPeriod
 import com.gu.memsub.BillingPeriod._
 import com.gu.memsub.Subscription.ProductRatePlanId
@@ -58,4 +58,9 @@ object Binders {
     adjective => Seq(month, year).find(_.adjective == adjective).get, _.adjective, (key: String, _: Exception) => s"Cannot parse parameter $key as a Billing Period"
   )
 
+  implicit object bindableCurrency extends QueryParsing[Currency](
+    parse = Currency.fromString(_).get,
+    serialize = _.toString,
+    error = (key: String, _: Exception) => s"Cannot parse parameter $key as Currency, allowed values are: ${Currency.all.mkString(", ")}"
+  )
 }

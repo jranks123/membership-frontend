@@ -126,4 +126,5 @@ GET            /english-heritage                      controllers.Default.redire
 # REST
 # Pricing
 GET            /currencies                            controllers.PricingApi.currencies
+GET            /paid-plans                            controllers.PricingApi.paidPlans(countryCurrency: Currency ?= GBP)
 

@@ -53,7 +53,9 @@ trait Membership {
       "com.gu.memsub.Subscription.ProductRatePlanId",
       "com.gu.memsub.promo.PromoCode",
       "controllers.Binders._",
-      "com.gu.memsub.BillingPeriod"
+      "com.gu.memsub.BillingPeriod",
+      "com.gu.i18n.Currency",
+      "com.gu.i18n.GBP"
     ))
 }
 
