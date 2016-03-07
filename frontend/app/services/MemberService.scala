@@ -8,6 +8,7 @@ import com.gu.memsub.Subscription.{Feature, MembershipSub, Plan, ProductRatePlan
 import com.gu.memsub.services.PromoService
 import com.gu.memsub.util.Timing
 import com.gu.subscriptions.Discounter
+import com.gu.zuora.soap.models.Commands.{CreditCardReferenceTransaction, Account, RatePlan, Subscribe}
 import services.api.MemberService.{MemberError, PendingAmendError}
 import com.gu.memsub._
 import com.gu.memsub.services.api.{CatalogService, PaymentService, SubscriptionService}
@@ -16,7 +17,7 @@ import com.gu.salesforce._
 import com.gu.stripe.Stripe.Customer
 import com.gu.stripe.{Stripe, StripeService}
 import com.gu.zuora.api.ZuoraService
-import com.gu.zuora.soap.actions.subscribe.{Account => SoapSubscribeAccount, RatePlan, CreditCardReferenceTransaction}
+
 import com.gu.zuora.soap.models.Queries.PreviewInvoiceItem
 import com.gu.zuora.soap.models.Results.{CreateResult, SubscribeResult, UpdateResult}
 import com.gu.zuora.soap.models.{PaymentSummary, Queries => SoapQueries}
@@ -358,20 +359,19 @@ class MemberService(identityService: IdentityService,
     }
   }
 
-  override def createFreeSubscription(contactId: ContactId,
-                                      joinData: JoinForm): Future[SubscribeResult] = {
+  override def createFreeSubscription(contactId: ContactId, joinData: JoinForm): Future[SubscribeResult] = {
     val planId = joinData.planChoice.productRatePlanId
     val currency = catalog.unsafeFindFree(planId).currencyOrGBP(joinData.deliveryAddress.country)
 
     for {
       zuoraFeatures <- zuoraService.getFeatures
-      result <- zuoraService.createSubscription(
-        subscribeAccount = SoapSubscribeAccount.stripe(contactId, currency, autopay = false),
+      result <- zuoraService.createSubscription(Subscribe(
+        account = Account.stripe(contactId, currency, autopay = false),
         paymentMethod = None,
         ratePlans = NonEmptyList(RatePlan(planId.get, None)),
         name = joinData.name,
         address = joinData.deliveryAddress
-      )
+      ))
     } yield result
   }
 
@@ -393,17 +393,17 @@ class MemberService(identityService: IdentityService,
       zuoraFeatures <- zuoraService.getFeatures
       plan = RatePlan(planId.get, None, featuresPerTier(zuoraFeatures)(planId, joinData.featureChoice).map(_.id.get))
       currency = catalog.unsafeFindPaid(planId).currencyOrGBP(joinData.zuoraAccountAddress.country)
-      result <- zuoraService.createSubscription(
-        subscribeAccount = SoapSubscribeAccount.stripe(
+      result <- zuoraService.createSubscription(Subscribe(
+        account = Account.stripe(
           contactId = contactId,
           currency = currency,
           autopay = true),
-        paymentMethod = Some(CreditCardReferenceTransaction(customer)),
+        paymentMethod = Some(CreditCardReferenceTransaction(customer.card.id, customer.id)),
         ratePlans = discounter.applyPromoCode(plan, validPromoCode),
         name = joinData.name,
         address = joinData.zuoraAccountAddress,
         promoCode = validPromoCode
-      )
+      ))
     } yield result
   }
 
