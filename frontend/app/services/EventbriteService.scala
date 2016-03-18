@@ -1,8 +1,11 @@
 package services
 
+import java.net.SocketTimeoutException
+
 import com.github.nscala_time.time.OrderingImplicits._
 import com.gu.memsub.util.{ScheduledTask, WebServiceHelper}
 import com.squareup.okhttp.Request
+import com.typesafe.scalalogging.LazyLogging
 import configuration.Config
 import configuration.Config.Implicits.akkaSystem
 import model.Eventbrite._
@@ -20,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-trait EventbriteService extends WebServiceHelper[EBObject, EBError] {
+trait EventbriteService extends WebServiceHelper[EBObject, EBError] with LazyLogging {
   val apiToken: String
   val maxDiscountQuantityAvailable: Int
 
@@ -43,12 +46,16 @@ trait EventbriteService extends WebServiceHelper[EBObject, EBError] {
 
   def eventsTaskFor(status: String, initialDelay: FiniteDuration, refreshTime: FiniteDuration): ScheduledTask[Seq[RichEvent]] =
     ScheduledTask[Seq[RichEvent]](s"Eventbrite $status events", Nil, initialDelay, refreshTime) {
-      for {
+      (for {
         events <- getAll[EBEvent]("users/me/owned_events/", List(
           "status" -> status,
           "expand" -> EBEvent.expansions.mkString(",")))
         richEvents <- Future.traverse(events)(mkRichEvent)
-      } yield richEvents
+      } yield richEvents).recover {
+        case e: SocketTimeoutException =>
+          logger.warn(s"Eventbrite timed out getting $status events")
+          Seq.empty
+      }
     }
 
   // The prime numbers are to spread the requests out over the refreshTime.
