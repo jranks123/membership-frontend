@@ -84,4 +84,7 @@ object MemberService {
   case class PendingAmendError(name: Subscription.Name) extends MemberError {
     override def getMessage = s"Subscription ${name.get} already has a pending amend"
   }
+  case class NoCardError(name: Subscription.Name) extends MemberError {
+    override def getMessage = s"Subscription ${name.get} has no card"
+  }
 }
