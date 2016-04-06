@@ -131,11 +131,8 @@ object TierController extends Controller with ActivityTracking
       PageInfo(initialCheckoutForm = formI18n, stripePublicKey = stripeKey)
     }
 
-
-    def fromFree(subscriber: FreeMember): Future[Result] =
-      for {
-        privateFields <- identityUserFieldsF
-      } yield {
+    request.paidOrFreeSubscriber.fold({freeSubscriber =>
+      identityUserFieldsF.map(privateFields =>
         Ok(views.html.tier.upgrade.freeToPaid(
           c.friend,
           targetPlans,
@@ -143,9 +140,8 @@ object TierController extends Controller with ActivityTracking
           privateFields,
           pageInfo(privateFields, BillingPeriod.year)
         )(getToken, request))
-      }
-
-    request.paidOrFreeSubscriber.fold(fromFree, { paidSubscriber =>
+      )
+    }, { paidSubscriber =>
       val billingPeriod = paidSubscriber.subscription.plan.billingPeriod
       val flashError = request.flash.get("error").map(FlashMessage.error)
 
