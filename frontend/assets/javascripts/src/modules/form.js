@@ -82,7 +82,7 @@ define([
             promoCode.init();
 
             if (form.hasPayment) {
-                require('js!stripe').then(function() {
+                curl('js!stripe').then(function() {
                     payment.init();
                 });
             }
