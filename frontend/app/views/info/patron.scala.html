@@ -19,73 +19,55 @@
 
 
     @* ===== About Patronage ===== *@
-    @fragments.page.heroBanner("hero-banner--newsroom hero-banner--alt-accent") {
+    @fragments.page.heroBanner("hero-banner--newsroom") {
         Patrons of the Guardian
-    } {
+    } {  }()
 
+    @fragments.page.section(hasBorder = false) {
+        <div class="listing__text">
         <p>The Patron tier is for those who care deeply about the Guardian’s journalism and the impact it has on the world.</p>
 
         <p>From campaigning on issues affecting the voices less heard to holding those in power to account, Patrons ensure the Guardian can continue to surface the information and ideas that shape the global conversation.</p>
-    }()
-
-    @fragments.page.section() {
+        </div>
         @fragments.tier.packagePromoMinimal(patronPlans, countryGroup, showDescription = false, modifierClass = Some("package-promo--spread"))
-
     }
 
     @* ===== Ensuring our independence ===== *@
-    @fragments.page.section() {
-
-        @for(img <- pageImages.find(_.name.contains("independence"))) {
-            @fragments.promos.promoQuote(
-                Asset.at("images/common/katharine-viner-cutout.png"),
-                "Katharine Viner, editor-in-chief of the Guardian"
-            ) {
-
-                <p>The Guardian has no proprietor. Our editor has total independence.</p>
-                <p>The support of Patrons helps to ensure that the Guardian can stand witness to the world, without interference.</p>
-
-            }
-        }
+    @fragments.page.section(hasBorder = false, hasBottomPadding = false) {
+        <div class="listing__text">
+        <p>The Guardian has no proprietor. Our editor has total independence.</p>
+        <p>The support of Patrons helps to ensure that the Guardian can stand witness to the world, without interference.</p>
+</div>
     }
 
     @* ===== Backstage Pass ===== *@
 
     @for(img <- pageImages.find(_.name.contains("backstage-pass"))) {
 
-        @fragments.page.sectionCardStack(img,Some("Backstage pass to the Guardian")) {
+        @fragments.page.sectionCardStack(img) {
             <div class="listing__text">
 
                 <p>In return for your support, Patrons are given a behind-the-scenes view of how the Guardian operates.  For example, tour our newsroom, visit our printing presses or attend a campaign lecture.</p>
-                <a class="action"
-                    href="@routes.Joiner.enterPaidDetails(Tier.patron)"
-                    data-metric-trigger="click"
-                    data-metric-category="join"
-                    data-metric-action="patron"
-                >Become a Patron today</a>
+                <p>
+                    Patrons are crucial to the future development of Membership, and there will be opportunities to get involved.  From hosting your own events to connecting members to one another, you will shape the future of the community.</p>
             </div>
         }
     }
 
 
     @* ===== Get Involved ===== *@
-    @for(img <- pageImages.find(_.name.contains("get-involved"))) {
-        <div class="page-slice l-constrained">
 
-            @fragments.page.sectionCardStack(img,Some("Backstage pass to the Guardian")) {
-                <div class="listing__text">
-                    Patrons are crucial to the future development of Membership, and there will be opportunities to get involved.  From hosting your own events to connecting members to one another, you will shape the future of the community.</p>
-                @fragments.tier.packagePromoMinimal(patronPlans, countryGroup)
-            }
-        </div>
-    }
 
     @* ===== Join Today ===== *@
-    <div class="page-slice page-slice--split tone-tint">
-        <div class="page-slice__inner l-constrained">
-            <h2 class="page-slice__headline">Not ready to become a Patron yet? Join as a Supporter or a Partner</h2>
-            <div class="page-slice__content">
-                <ul class="grid grid--equal-heights grid--bordered grid--2up-stacked">
+
+    @fragments.page.section(hasBorder = false) {
+            @fragments.tier.packagePromo(patronPlans, countryGroup,isReversed = true)
+        <div class="listing__text">
+
+            <p>
+
+        Not ready to become a Patron yet? Join as a Supporter or a Partner</p></div>
+<ul class="grid grid--equal-heights grid--bordered grid--2up-stacked">
                     <li class="grid__item">
                     @fragments.tier.packagePromo(PaidPlans(supporterPlans), countryGroup, isReversed = true)
                     </li>
@@ -93,9 +75,8 @@
                     @fragments.tier.packagePromo(PaidPlans(partnerPlans), countryGroup, isReversed = true)
                     </li>
                 </ul>
-                @fragments.tier.friendTeaser()
             </div>
-        </div>
-    </div>
 
+
+}
 }
