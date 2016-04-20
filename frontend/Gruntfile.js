@@ -1,4 +1,4 @@
-/* global module: false, process: false */
+    /* global module: false, process: false */
 module.exports = function (grunt) {
     'use strict';
 
@@ -51,19 +51,47 @@ module.exports = function (grunt) {
          ***********************************************************************/
 
         webpack: {
+
             frontend: {
-
-                // webpack options
-                context: '<%= dirs.assets.javascripts %>',
-                entry: "./src/main",
-                debug: true,
-
-                output: {
-                    path: '<%= dirs.publicDir.root %>',
-                    chunkFilename:  'webpack/[chunkhash].js',
-                    filename: "javascripts/main.js",
-                    publicPath: 'assets/'
+                resolve: {
+                    root: ["<%= dirs.assets.javascripts %>", "<%= dirs.assets.root %>/../node_modules/"],
+                    extensions: ["", ".js", ".es6"],
+                    alias: {
+                        '$$': 'src/utils/$',
+                        'lodash': 'lodash-amd/modern',
+                        'bean': 'bean/bean',
+                        'bonzo': 'bonzo/bonzo',
+                        'qwery': 'qwery/qwery',
+                        'reqwest': 'reqwest/reqwest',
+                        'respimage': 'respimage/respimage',
+                        'lazySizes': 'lazysizes/lazysizes',
+                        'raven': 'raven-js/dist/raven',
+                        'gumshoe': 'gumshoe/dist/js/gumshoe',
+                        'smoothScroll': 'smooth-scroll/dist/js/smooth-scroll',
+                        'ajax': 'src/utils/ajax'
+                    }
                 },
+
+                module: {
+                    loaders: [
+                        {
+                            test: /\.es6$/,
+                            exclude: /node_modules/,
+                            loader: 'babel',
+                            query: {
+                                presets: ['es2015'],
+                                cacheDirectory: ''
+                            }
+                        }
+                    ]
+                },
+
+                progress: false,
+                failOnError: true,
+                watch: false,
+                keepalive: false,
+                inline: true,
+                hot: false,
 
                 stats: {
                     modules: true,
@@ -71,48 +99,20 @@ module.exports = function (grunt) {
                     colors: true
                 },
 
-                resolve: {
-                    root: "<%= dirs.assets.javascripts %>",
-                    alias: {
-                        '$$': 'src/utils/$',
-                        'lodash': 'lib/bower-components/lodash-amd/modern',
-                        'bean': 'lib/bower-components/bean/bean',
-                        'bonzo': 'lib/bower-components/bonzo/bonzo',
-                        'qwery': 'lib/bower-components/qwery/qwery',
-                        'reqwest': 'lib/bower-components/reqwest/reqwest',
-                        'respimage': 'lib/bower-components/respimage/respimage',
-                        'lazySizes': 'lib/bower-components/lazysizes/lazysizes',
-                        'raven': 'lib/bower-components/raven-js/dist/raven',
-                        'gumshoe': 'lib/bower-components/gumshoe/dist/js/gumshoe',
-                        'smoothScroll': 'lib/bower-components/smooth-scroll/dist/js/smooth-scroll',
-                        'text':'lib/bower-components/requirejs-text/text',
-                        'ajax': 'src/utils/ajax'
-                    }
+                output: {
+                    path: '<%= dirs.publicDir.root %>/',
+                    chunkFilename:  'webpack/[chunkhash].js',
+                    filename: "javascripts/[name].js",
+                    publicPath: '/assets/'
                 },
 
+                context: '<%= dirs.assets.javascripts %>',
 
-
-                storeStatsTo: "xyz", // writes the status to a variable named xyz
-                // you may use it later in grunt i.e. <%= xyz.hash %>
-
-                progress: false, // Don't show progress
-                // Defaults to true
-
-                failOnError: true, // don't report error to grunt if webpack find errors
-                // Use this if webpack errors are tolerable and grunt should continue
-
-                watch: false, // use webpacks watcher
-                // You need to keep the grunt process alive
-
-                keepalive: false, // don't finish the grunt task
-                // Use this in combination with the watch option
-
-                inline: true,  // embed the webpack-dev-server runtime into the bundle
-                // Defaults to false
-
-                hot: false // adds the HotModuleReplacementPlugin and switch the server to hot mode
-                // Use this in combination with the inline option
-
+                entry: {
+                    main: "./src/main",
+                    tools: './src/tools'
+                },
+                debug: true
             }
         },
 
@@ -171,53 +171,6 @@ module.exports = function (grunt) {
             dist: { src: '<%= dirs.publicDir.stylesheets %>/*.css' }
         },
 
-        requirejs: {
-            compile: {
-                options: {
-                    name: 'src/main',
-                    baseUrl: '<%= dirs.assets.javascripts %>',
-                    // Keep these in sync with the paths found in the karma test-main.js paths
-                    paths: {
-                        '$': 'src/utils/$',
-                        'lodash': 'lib/bower-components/lodash-amd/modern',
-                        'bean': 'lib/bower-components/bean/bean',
-                        'bonzo': 'lib/bower-components/bonzo/bonzo',
-                        'qwery': 'lib/bower-components/qwery/qwery',
-                        'reqwest': 'lib/bower-components/reqwest/reqwest',
-                        'respimage': 'lib/bower-components/respimage/respimage',
-                        'lazySizes': 'lib/bower-components/lazysizes/lazysizes',
-                        'raven': 'lib/bower-components/raven-js/dist/raven',
-                        'gumshoe': 'lib/bower-components/gumshoe/dist/js/gumshoe',
-                        'smoothScroll': 'lib/bower-components/smooth-scroll/dist/js/smooth-scroll',
-                        'ajax': 'src/utils/ajax',
-                        'text':'lib/bower-components/requirejs-text/text',
-                        'es6': "../../node_modules/requirejs-babel/es6",
-                        'babel': "../../node_modules/requirejs-babel/babel-5.8.34.min",
-                    },
-                    stubModules: ['babel', 'es6'],
-                    findNestedDependencies: false,
-                    wrapShim: true,
-                    optimize: isDev ? 'none' : 'uglify2',
-                    generateSourceMaps: true,
-                    preserveLicenseComments: false,
-                    waitSeconds: 120,
-                    out: '<%= dirs.publicDir.javascripts %>/main.js'
-                }
-            },
-            compileTools: {
-                options: {
-                    name: 'src/tools',
-                    baseUrl: '<%= dirs.assets.javascripts %>',
-                    findNestedDependencies: false,
-                    wrapShim: true,
-                    optimize: isDev ? 'none' : 'uglify2',
-                    generateSourceMaps: true,
-                    preserveLicenseComments: false,
-                    out: '<%= dirs.publicDir.javascripts %>/tools.js'
-                }
-            }
-        },
-
         /***********************************************************************
          * Copy & Clean
          ***********************************************************************/
@@ -236,13 +189,13 @@ module.exports = function (grunt) {
                 dest: '<%= dirs.publicDir.javascripts %>/lib/polyfills.min.js'
             },
             bundles: {
-                src: '<%= dirs.publicDir.javascripts %>/bundles/*.js',
+                src: '<%= dirs.publicDir.root %>/bundles/*.js',
                 dest: '<%= dirs.publicDir.root %>/dist/javascripts/bundles/',
                 expand: true,
                 flatten: true
             },
             curl: {
-                src: '<%= dirs.assets.javascripts %>/lib/bower-components/curl/dist/curl-with-js-and-domReady/curl.js',
+                src: 'node_modules/curl-amd/dist/curl-with-js-and-domReady/curl.js',
                 dest: '<%= dirs.publicDir.javascripts %>/lib/curl/',
                 expand: true,
                 flatten: true
@@ -286,6 +239,7 @@ module.exports = function (grunt) {
 
         clean: {
             bookmarklets: ['<%= dirs.publicDir.bookmarklets %>'],
+            webpack: ['<%= dirs.publicDir.root %>/webpack'],
             js: ['<%= dirs.publicDir.javascripts %>'],
             css: ['<%= dirs.publicDir.stylesheets %>'],
             icons: ['<%= dirs.assets.images %>/inline-svgs/*.svg'],
@@ -335,8 +289,7 @@ module.exports = function (grunt) {
                 files: [{
                     src: [
                         '<%= dirs.publicDir.stylesheets %>/**/*.css',
-                        '<%= dirs.publicDir.javascripts %>/lib/*.js',
-                        '<%= dirs.publicDir.javascripts %>/main.js',
+                        '<%= dirs.publicDir.javascripts %>/**/*.js',
                         '<%= dirs.publicDir.javascripts %>/**/*.map',
                         '<%= dirs.publicDir.images %>/**/*.*'
                     ],
@@ -461,7 +414,6 @@ module.exports = function (grunt) {
         grunt.task.run([
             'clean:js',
             'webpack',
-            'requirejs:compileTools',
             'copy:polyfills',
             'copy:curl',
             'copy:zxcvbn',
@@ -483,7 +435,6 @@ module.exports = function (grunt) {
          */
         if (!isDev) {
             grunt.task.run([
-                'copy:bundles',
                 'asset_hash',
                 'clean:public:prod'
             ]);
@@ -514,6 +465,7 @@ module.exports = function (grunt) {
 
     grunt.registerTask('clean:public', [
         'clean:bookmarklets',
+        'clean:webpack',
         'clean:js',
         'clean:css',
         'clean:images',
