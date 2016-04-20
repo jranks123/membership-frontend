@@ -39,6 +39,7 @@ trait Membership {
     publishArtifact in (Compile, packageDoc) := false,
     parallelExecution in Global := false,
     updateOptions := updateOptions.value.withCachedResolution(true),
+    test in assembly := (fast-test in Test).value,
     assemblyMergeStrategy in assembly := { // We only use sbt-assembly as a canary to tell us about clashes - we DON'T use the generated uber-jar, instead the native-packaged zip
       case x if x.startsWith("com/google/gdata/util/common/base/") => MergeStrategy.first // https://github.com/playframework/playframework/issues/3365#issuecomment-198399016
       case "version.txt"                                           => MergeStrategy.discard // identity jars all include version.txt

@@ -21,11 +21,11 @@ class JoinPartnerSpec extends FeatureSpec with Browser
 
   private def checkDependenciesAreAvailable = {
     assume(Dependencies.MembershipFrontend.isAvailable,
-      s"- ${Dependencies.MembershipFrontend.url} unavaliable! " +
+      s"- ${Dependencies.MembershipFrontend.url} unavailable! " +
         "\nPlease run membership-frontend server before running tests.")
 
     assume(Dependencies.IdentityFrontend.isAvailable,
-      s"- ${Dependencies.IdentityFrontend.url} unavaliable! " +
+      s"- ${Dependencies.IdentityFrontend.url} unavailable! " +
         "\nPlease run identity-frontend server before running tests.")
   }
 
