@@ -71,7 +71,7 @@ define([
 
     var init = function () {
 
-        if (form) {
+        if (typeof form.elems != 'undefined') {
             validation.init();
             address.init();
             password.init();
