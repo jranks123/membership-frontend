@@ -51,7 +51,7 @@ module.exports = function (grunt) {
          ***********************************************************************/
 
         webpack: {
-            options: require('./webpack.conf.js'),
+            options: require('./webpack.conf.js')(isDev),
             frontend: {
                 output: {
                     path: 'public/',

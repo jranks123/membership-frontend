@@ -1,6 +1,6 @@
 var Uglify = require("webpack/lib/optimize/UglifyJsPlugin");
 
-module.exports = {
+module.exports = function(debug) { return {
     resolve: {
         root: ["assets/javascripts", "assets/../node_modules/"],
         extensions: ["", ".js", ".es6"],
@@ -34,9 +34,9 @@ module.exports = {
         ]
     },
 
-    plugins: [
+    plugins: !debug ? [
         new Uglify({compress: {warnings: false}})
-    ],
+    ] : [],
 
     progress: true,
     failOnError: true,
@@ -53,4 +53,4 @@ module.exports = {
 
     context: 'assets/javascripts',
     debug: false
-};
+}};

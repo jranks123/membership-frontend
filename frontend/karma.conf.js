@@ -32,7 +32,7 @@ module.exports = function(config) {
         'assets/javascripts/tests/spec/**/*.spec.js': ['webpack']
     },
 
-    webpack: require('./webpack.conf.js'),
+    webpack: require('./webpack.conf.js')(true),
 
 
       // test results reporter to use
