@@ -2,7 +2,7 @@
 @import views.support.Asset
 @import configuration.Links
 
-@(pageInfo: PageInfo)
+@(pageInfo: PageInfo, maxAmount: Option[Int])
 
 @giraffeMain(pageInfo) {
     <div class="l-constrained">
